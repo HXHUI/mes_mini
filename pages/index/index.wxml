@@ -4,7 +4,7 @@
   <view class="header">
     <view class="greeting">
       <view class="welcome">
-        <text>Hi，{{userInfo.name || '张工程师'}}</text>
+        <text>Hi，{{userInfo.real_name || '用户'}}</text>
         <text class="welcome-text">欢迎使用MES生产执行管理系统</text>
       </view>
       <image class="avatar" src="{{userInfo.avatar || '/images/icons/avatar-default.png'}}" mode="aspectFill"></image>
@@ -45,17 +45,31 @@
         </view>
       </view>
       
-      <!-- 故障处理卡片 -->
+      <!-- 保养工单卡片 -->
       <view 
         class="function-card" 
         style="background-color: #9C27B0"
         bindtap="navigateTo"
-        data-path="/pages/fault-handle/fault-handle"
+        data-path="/pages/maintenance-orders/maintenance-orders"
+      >
+        <image class="card-icon" src="/images/icons/work-order.png" mode="aspectFit"></image>
+        <view class="card-info">
+          <text class="card-title">保养工单</text>
+          <text class="card-desc">设备保养</text>
+        </view>
+      </view>
+      
+      <!-- 维修工单卡片 -->
+      <view 
+        class="function-card" 
+        style="background-color: #4CAF50"
+        bindtap="navigateTo"
+        data-path="/pages/repair-orders/repair-orders"
       >
         <image class="card-icon" src="/images/icons/repair.png" mode="aspectFit"></image>
         <view class="card-info">
-          <text class="card-title">故障处理</text>
-          <text class="card-desc">单处理</text>
+          <text class="card-title">维修工单</text>
+          <text class="card-desc">查看全部工单</text>
         </view>
       </view>
       

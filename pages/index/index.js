@@ -1,7 +1,10 @@
+// 引入API模块
+import { userApi } from '../../utils/api/user.js';
+
 Page({
   data: {
     userInfo: {
-      name: '张工程师',
+      name: '加载中...',
       avatar: '/images/icons/avatar-default.png',
     },
     functionCards: [
@@ -16,10 +19,10 @@ Page({
       {
         id: 'fault-handle',
         icon: '/images/icons/repair.png',
-        title: '故障处理',
-        desc: '单处理',
+        title: '保养工单',
+        desc: '设备保养',
         bgColor: '#9C27B0',
-        path: '/pages/fault-handle/fault-handle'
+        path: '/pages/maintenance-orders/maintenance-orders'
       },
       {
         id: 'scan-repair',
@@ -85,14 +88,33 @@ Page({
   },
 
   getUserInfo: function() {
+    // 先尝试从缓存获取用户信息
     const userInfo = wx.getStorageSync('userInfo')
     if (userInfo) {
       this.setData({
         userInfo
       })
-    } else {
-      // 使用默认值，已在模板中设置
     }
+
+    // 无论是否有缓存，都从API获取最新用户信息
+    userApi.getUserInfo()
+      .then(res => {
+        if (res && res.code === 200 && res.data) {
+          const apiUserInfo = res.data;
+          
+          // 更新页面和本地存储
+          this.setData({
+            userInfo: apiUserInfo
+          });
+          
+          // 更新本地存储的用户信息
+          wx.setStorageSync('userInfo', apiUserInfo);
+        }
+      })
+      .catch(err => {
+        console.error('获取用户信息失败', err);
+        // 发生错误时不做特殊处理，使用已有的数据
+      });
   },
 
   loadStatistics: function() {
@@ -267,33 +289,30 @@ Page({
       }
     })
   },
-
+  
   scanCode: function() {
     wx.scanCode({
       success: (res) => {
-        const deviceId = res.result
-        wx.navigateTo({
-          url: `/pages/device-detail/device-detail?id=${deviceId}`
-        })
+        console.log('扫码结果：', res)
+        // 处理扫码结果
+        // 导航到相应页面
       },
       fail: (err) => {
         console.error('扫码失败', err)
-        wx.showToast({
-          title: '扫码失败',
-          icon: 'none'
-        })
       }
     })
   },
-
+  
   viewAllNotices: function() {
     wx.navigateTo({
       url: '/pages/messages/messages'
     })
   },
-
+  
   viewWorkOrders: function(e) {
     const type = e.currentTarget.dataset.type
+    console.log('查看工单类型：', type)
+    // 导航到工单列表页
     wx.navigateTo({
       url: `/pages/repair-orders/repair-orders?status=${type}`
     })

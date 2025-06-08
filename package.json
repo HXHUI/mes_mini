@@ -1,0 +1,13 @@
+{
+  "name": "mes-mini",
+  "version": "1.0.0",
+  "description": "设备故障申报与保养管理小程序",
+  "main": "app.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+} 

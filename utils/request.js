@@ -52,29 +52,76 @@ export const request = (options) => {
             wx.removeStorageSync('token')
             wx.removeStorageSync('userInfo')
             
-            // 跳转到登录页
-            wx.navigateTo({
-              url: '/pages/login/login'
-            })
+            // 跳转到登录页，但避免在登录页面再次跳转造成循环
+            const pages = getCurrentPages()
+            const currentPage = pages[pages.length - 1]
+            const isLoginPage = currentPage && currentPage.route && currentPage.route.includes('login')
+            
+            if (!isLoginPage) {
+              wx.showToast({
+                title: '登录状态已失效，请重新登录',
+                icon: 'none',
+                duration: 2000
+              })
+              
+              // 使用switchTab跳转到登录页
+              setTimeout(() => {
+                wx.reLaunch({
+                  url: '/pages/login/login'
+                })
+              }, 2000)
+            }
             
             reject(new Error('登录状态已失效，请重新登录'))
           } else {
             // 其他业务错误
+            const errMsg = res.data.message || '请求失败'
+            if (options.showError !== false) {
+              wx.showToast({
+                title: errMsg,
+                icon: 'none',
+                duration: 2000
+              })
+            }
+            reject(new Error(errMsg))
+          }
+        } else if (res.statusCode === 401 || res.statusCode === 403) {
+          // HTTP 401/403 错误，清除登录状态
+          wx.removeStorageSync('token')
+          wx.removeStorageSync('userInfo')
+          
+          // 跳转到登录页，但避免在登录页面再次跳转造成循环
+          const pages = getCurrentPages()
+          const currentPage = pages[pages.length - 1]
+          const isLoginPage = currentPage && currentPage.route && currentPage.route.includes('login')
+          
+          if (!isLoginPage) {
             wx.showToast({
-              title: res.data.message || '请求失败',
+              title: '登录状态已失效，请重新登录',
               icon: 'none',
               duration: 2000
             })
-            reject(new Error(res.data.message || '请求失败'))
+            
+            // 使用reLaunch跳转到登录页
+            setTimeout(() => {
+              wx.reLaunch({
+                url: '/pages/login/login'
+              })
+            }, 2000)
           }
+          
+          reject(new Error('登录状态已失效，请重新登录'))
         } else {
-          // HTTP状态码错误
-          wx.showToast({
-            title: `请求失败: ${res.statusCode}`,
-            icon: 'none',
-            duration: 2000
-          })
-          reject(new Error(`请求失败: ${res.statusCode}`))
+          // 其他HTTP状态码错误
+          const errMsg = `请求失败: ${res.statusCode}`
+          if (options.showError !== false) {
+            wx.showToast({
+              title: errMsg,
+              icon: 'none',
+              duration: 2000
+            })
+          }
+          reject(new Error(errMsg))
         }
       },
       fail: (err) => {
@@ -82,11 +129,13 @@ export const request = (options) => {
           wx.hideLoading()
         }
         
-        wx.showToast({
-          title: '网络错误，请检查网络连接',
-          icon: 'none',
-          duration: 2000
-        })
+        if (options.showError !== false) {
+          wx.showToast({
+            title: '网络错误，请检查网络连接',
+            icon: 'none',
+            duration: 2000
+          })
+        }
         
         reject(err)
       }

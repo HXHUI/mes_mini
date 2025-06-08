@@ -1,11 +1,14 @@
 <!-- pages/order-detail/order-detail.wxml -->
 <view class="container">
-  <view class="order-header">
-    <view class="order-id">工单号：{{orderInfo.id}}</view>
-    <view class="order-status {{orderInfo.status}}">
-      {{orderInfo.status === 'pending' ? '待处理' : (orderInfo.status === 'processing' ? '处理中' : '已完成')}}
-    </view>
+  <view wx:if="{{isLoading}}" class="loading-container">
+    <view class="loading">加载中...</view>
   </view>
+  
+  <block wx:else>
+    <view class="order-header">
+      <view class="order-id">工单号：{{orderInfo.id}}</view>
+      <view class="status-tag {{orderInfo.status}}">{{orderInfo.statusText || (orderInfo.status === 'pending' ? '待处理' : (orderInfo.status === 'in_progress' ? '处理中' : '已完成'))}}</view>
+    </view>
   
   <view class="order-section">
     <view class="section-title">设备信息</view>
@@ -19,45 +22,145 @@
     </view>
     <view class="info-item">
       <text class="label">设备位置：</text>
-      <text class="value">{{orderInfo.deviceLocation}}</text>
+        <text class="value">{{orderInfo.deviceLocation || '未知位置'}}</text>
     </view>
   </view>
   
-  <view class="order-section">
+    <!-- 维修工单显示故障信息 -->
+    <view class="order-section" wx:if="{{orderInfo.orderType !== 'MAINTENANCE'}}">
     <view class="section-title">故障信息</view>
     <view class="info-item">
       <text class="label">故障类型：</text>
-      <text class="value">{{orderInfo.faultType}}</text>
+        <text class="value">{{orderInfo.faultTypeText || orderInfo.faultType}}</text>
     </view>
     <view class="info-item">
       <text class="label">紧急程度：</text>
-      <text class="value urgency {{orderInfo.urgency}}">
-        {{orderInfo.urgency === 'high' ? '紧急' : (orderInfo.urgency === 'medium' ? '一般' : '普通')}}
-      </text>
+      <view class="urgency-tag {{orderInfo.urgency}}">
+          {{orderInfo.urgencyText || (orderInfo.urgency === 'high' ? '紧急' : (orderInfo.urgency === 'medium' ? '一般' : '普通'))}}
+      </view>
     </view>
     <view class="info-item description">
       <text class="label">故障描述：</text>
-      <text class="value">{{orderInfo.faultDesc}}</text>
+        <text class="value">{{orderInfo.faultDesc || '无描述'}}</text>
+      </view>
+    </view>
+    
+    <!-- 保养工单显示任务信息 -->
+    <view class="order-section" wx:if="{{orderInfo.orderType === 'MAINTENANCE'}}">
+      <view class="section-title">保养任务</view>
+      <view class="info-item">
+        <text class="label">保养类型：</text>
+        <text class="value">{{orderInfo.maintenanceTypeText || '计划保养'}}</text>
+      </view>
+      <view class="info-item priority-row">
+        <text class="label">优先级：</text>
+        <view class="priority {{orderInfo.priority}}">
+          {{orderInfo.priorityText || (orderInfo.priority === 'high' ? '高' : (orderInfo.priority === 'medium' ? '中' : '低'))}}
+        </view>
+      </view>
+      <view class="info-item description">
+        <text class="label">保养内容：</text>
+        <text class="value">{{orderInfo.description || '无描述'}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">计划开始：</text>
+        <text class="value">{{orderInfo.scheduledStart || '--'}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">计划结束：</text>
+        <text class="value">{{orderInfo.scheduledEnd || '--'}}</text>
+      </view>
+      <!-- 已完成状态显示实际开始和结束时间 -->
+      <block wx:if="{{orderInfo.status === 'completed'}}">
+        <view class="info-item">
+          <text class="label">实际开始：</text>
+          <text class="value">{{orderInfo.actualStart || '--'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">实际结束：</text>
+          <text class="value">{{orderInfo.actualEnd || '--'}}</text>
+        </view>
+      </block>
+    </view>
+    
+    <!-- 保养工单显示任务列表 -->
+    <view class="order-section" wx:if="{{orderInfo.orderType === 'MAINTENANCE' && orderInfo.tasks && orderInfo.tasks.length > 0}}">
+      <view class="section-title-row">
+        <view class="section-title">任务清单</view>
+        <!-- 添加开始任务按钮，仅在处理中且未开始状态显示 -->
+        <button 
+          class="start-task-btn {{orderInfo.hasStarted ? 'disabled' : ''}}" 
+          bindtap="startOrder" 
+          disabled="{{orderInfo.hasStarted}}"
+          wx:if="{{orderInfo.status === 'in_progress'}}">
+            {{orderInfo.hasStarted ? '已开始' : '开始任务'}}
+        </button>
+      </view>
+      <view class="task-list">
+        <view class="task-item" wx:for="{{orderInfo.tasks}}" wx:key="id">
+          <view class="task-header">
+            <text class="task-name">{{item.task_name}}</text>
+            <view class="task-status {{item.status}}">
+              {{item.status === 'pending' ? '待处理' : 
+                (item.status === 'in_progress' ? '进行中' : 
+                  (item.status === 'completed' ? '已完成' : 
+                    (item.status === 'skipped' ? '已跳过' : '待处理')))}}
+            </view>
+          </view>
+          
+          <view class="task-info-container">
+            <view class="task-info-row">
+              <text class="info-label">标准工时：</text>
+              <text class="time-value">{{item.standard_time || 0}}小时</text>
+            </view>
+            
+            <!-- 已完成状态显示实际耗时 -->
+            <view class="task-info-row" wx:if="{{orderInfo.status === 'completed' || item.status === 'completed'}}">
+              <text class="info-label">实际耗时：</text>
+              <text class="time-value">{{item.actual_time || 0}}小时</text>
+            </view>
+            
+            <!-- 已跳过状态显示跳过原因 -->
+            <view class="task-info-row" wx:if="{{item.status === 'skipped'}}">
+              <text class="info-label">跳过原因：</text>
+              <text class="time-value">{{item.skip_reason || '无需执行'}}</text>
+            </view>
+          </view>
+          
+          <!-- 进行中状态且工单已开始时才显示实际耗时输入 -->
+          <view class="task-actual-time" wx:if="{{orderInfo.status === 'in_progress' && orderInfo.hasStarted && (item.status === 'pending' || item.status === 'in_progress')}}">
+            <input class="time-input" type="digit" placeholder="输入实际耗时（小时）" bindinput="onActualTimeInput" data-id="{{item.id}}" value="{{item.inputActualTime}}"/>
+          </view>
+          
+          <!-- 处理中状态、工单已开始且任务未完成或未跳过时显示操作按钮 -->
+          <view class="task-action" wx:if="{{orderInfo.status === 'in_progress' && orderInfo.hasStarted && (item.status === 'pending' || item.status === 'in_progress')}}">
+            <!-- 只有填写了实际耗时并确认后才能完成任务 -->
+            <button class="task-btn {{!item.confirmed_actual_time ? 'disabled' : ''}}" bindtap="completeTask" data-id="{{item.id}}" disabled="{{!item.confirmed_actual_time}}">完成</button>
+            <button class="task-btn skip" bindtap="skipTask" data-id="{{item.id}}">跳过</button>
+          </view>
+        </view>
     </view>
   </view>
   
-  <view class="order-section">
+    <!-- 维修工单显示报修信息 -->
+    <view class="order-section" wx:if="{{orderInfo.orderType !== 'MAINTENANCE'}}">
     <view class="section-title">报修信息</view>
     <view class="info-item">
       <text class="label">报修人：</text>
-      <text class="value">{{orderInfo.reporter}}</text>
+        <text class="value">{{orderInfo.reporter || '未知'}}</text>
     </view>
     <view class="info-item">
       <text class="label">联系电话：</text>
-      <text class="value">{{orderInfo.contactPhone}}</text>
+        <text class="value">{{orderInfo.contactPhone || '未知'}}</text>
     </view>
     <view class="info-item">
       <text class="label">报修时间：</text>
-      <text class="value">{{orderInfo.reportTime}}</text>
+        <text class="value">{{orderInfo.reportTime || '未知'}}</text>
     </view>
   </view>
   
-  <view class="order-section" wx:if="{{orderInfo.faultImages && orderInfo.faultImages.length > 0}}">
+    <!-- 维修工单显示故障图片 -->
+    <view class="order-section" wx:if="{{orderInfo.orderType !== 'MAINTENANCE' && orderInfo.faultImages && orderInfo.faultImages.length > 0}}">
     <view class="section-title">故障图片</view>
     <view class="image-list">
       <image 
@@ -81,6 +184,16 @@
     <view class="info-item">
       <text class="label">接单时间：</text>
       <text class="value">{{orderInfo.handleTime || '--'}}</text>
+    </view>
+    <!-- 添加实际开始时间显示 -->
+    <view class="info-item" wx:if="{{orderInfo.actualStart}}">
+      <text class="label">实际开始：</text>
+      <text class="value">{{orderInfo.actualStart || '--'}}</text>
+    </view>
+    <!-- 添加实际结束时间显示 -->
+    <view class="info-item" wx:if="{{orderInfo.actualEnd}}">
+      <text class="label">实际结束：</text>
+      <text class="value">{{orderInfo.actualEnd || '--'}}</text>
     </view>
     <view class="info-item description" wx:if="{{orderInfo.handleDesc}}">
       <text class="label">处理说明：</text>
@@ -108,12 +221,20 @@
     <button class="action-btn handle" bindtap="handleOrder">接单处理</button>
   </view>
   
-  <view class="action-bar" wx:if="{{orderInfo.status === 'processing'}}">
-    <button class="action-btn" bindtap="showHandleForm">填写处理信息</button>
-    <button class="action-btn complete" bindtap="completeOrder">完成工单</button>
+  <!-- 维修工单处理中状态的操作按钮 -->
+  <view class="action-bar" wx:if="{{orderInfo.status === 'processing' || orderInfo.status === 'in_progress'}}">
+    <!-- 未开始处理时显示开始处理按钮 -->
+    <button class="action-btn handle" bindtap="startWorkOrder" wx:if="{{!orderInfo.hasStarted && orderInfo.orderType !== 'MAINTENANCE'}}">开始处理</button>
+    
+    <!-- 已开始处理显示填写处理信息和完成处理按钮 -->
+    <block wx:if="{{orderInfo.hasStarted || orderInfo.orderType === 'MAINTENANCE'}}">
+      <button class="action-btn" bindtap="showHandleForm">填写处理信息</button>
+      <button class="action-btn complete" bindtap="completeOrder">{{orderInfo.orderType === 'MAINTENANCE' ? '完成工单' : '处理完成'}}</button>
+    </block>
   </view>
   
   <view class="action-bar" wx:if="{{orderInfo.status === 'completed'}}">
     <button class="action-btn view" bindtap="viewDeviceDetail">查看设备</button>
   </view>
+  </block>
 </view> 

@@ -5,8 +5,10 @@ App({
   globalData: {
     userInfo: null,
     token: '',
-    // baseUrl: 'https://api.example.com/mes', // 替换为您的API地址
-    baseUrl: 'http://localhost:3000/mes',
+    // 开发环境
+    // baseUrl: 'http://localhost:3000/mes',
+    // 生产环境
+    baseUrl: 'https://wp.processforce.cn/mes', // 替换为您的实际生产环境API地址
     isLoggedIn: false
   },
 

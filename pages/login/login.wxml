@@ -7,8 +7,8 @@
   
   <view class="login-form">
     <view class="input-group">
-      <view class="input-label">工号</view>
-      <input class="input" type="text" placeholder="请输入工号" bindinput="onEmployeeIdInput" value="{{employeeId}}"/>
+      <view class="input-label">用户名</view>
+      <input class="input" type="text" placeholder="请输入用户名" bindinput="onUsernameInput" value="{{username}}"/>
     </view>
     
     <view class="input-group">
@@ -16,12 +16,19 @@
       <input class="input" password placeholder="请输入密码" bindinput="onPasswordInput" value="{{password}}"/>
     </view>
     
-    <button class="login-btn" bindtap="handleLogin">登 录</button>
+    <button class="login-btn" bindtap="handleLogin" loading="{{isLoading}}" disabled="{{isLoading}}">
+      {{isLoading ? '登录中...' : '登 录'}}
+    </button>
     
     <view class="other-login">
-      <button class="wechat-login-btn" bindtap="handleWechatLogin">
-        <image class="wechat-icon" src="/images/icons/wechat.png" mode="aspectFit"></image>
-        微信快捷登录
+      <button 
+        class="wechat-login-btn" 
+        bindtap="handleWechatLogin"
+        loading="{{isWechatLoading}}"
+        disabled="{{isWechatLoading || isLoading}}"
+      >
+        <image class="wechat-icon" src="/images/icons/wechat.png" mode="aspectFit" wx:if="{{!isWechatLoading}}"></image>
+        {{isWechatLoading ? '微信登录中...' : '微信快捷登录'}}
       </button>
     </view>
   </view>

@@ -16,31 +16,38 @@
         <view 
           wx:for="{{pendingList}}" 
           wx:key="id" 
-          class="order-item"
+          class="order-item urgency-{{item.urgency_level}}"
         >
           <view class="order-header">
-            <view class="device-name">{{item.device_name}}</view>
-            <view class="urgency-tag {{item.urgency}}">
-              {{item.urgency === 'high' ? '紧急' : (item.urgency === 'medium' ? '一般' : '普通')}}
+            <view class="device-name">{{item.device_name || '未知设备'}}</view>
+            <view class="urgency-tag {{item.urgency_level}}">
+              {{item.urgency_level === 'high' || item.urgency_level === 'urgent' ? '紧急' : 
+                (item.urgency_level === 'medium' ? '一般' : '普通')}}
             </view>
           </view>
           
           <view class="order-info">
             <view class="info-item">
               <text class="label">设备编号:</text>
-              <text class="value">{{item.device_id}}</text>
+              <text class="value">{{item.device_id || '-'}}</text>
             </view>
             <view class="info-item">
               <text class="label">故障描述:</text>
-              <text class="value">{{item.fault_desc}}</text>
+              <text class="value">{{item.description || '无描述'}}</text>
             </view>
             <view class="info-item">
               <text class="label">报修时间:</text>
-              <text class="value">{{item.report_time}}</text>
+              <text class="value">{{item.created_at || '-'}}</text>
             </view>
             <view class="info-item">
               <text class="label">报修人:</text>
-              <text class="value">{{item.reporter}}</text>
+              <text class="value">{{item.creator_name || '未知'}}</text>
+            </view>
+            <view class="info-item" wx:if="{{item.fault_type}}">
+              <text class="label">故障类型:</text>
+              <text class="value">{{item.fault_type === 'mechanical' ? '机械故障' : 
+                (item.fault_type === 'electrical' ? '电气故障' : 
+                (item.fault_type === 'software' ? '软件故障' : '其他故障'))}}</text>
             </view>
           </view>
           
@@ -63,31 +70,38 @@
         <view 
           wx:for="{{processingList}}" 
           wx:key="id" 
-          class="order-item"
+          class="order-item urgency-{{item.urgency_level}}"
         >
           <view class="order-header">
-            <view class="device-name">{{item.device_name}}</view>
-            <view class="urgency-tag {{item.urgency}}">
-              {{item.urgency === 'high' ? '紧急' : (item.urgency === 'medium' ? '一般' : '普通')}}
+            <view class="device-name">{{item.device_name || '未知设备'}}</view>
+            <view class="urgency-tag {{item.urgency_level}}">
+              {{item.urgency_level === 'high' || item.urgency_level === 'urgent' ? '紧急' : 
+                (item.urgency_level === 'medium' ? '一般' : '普通')}}
             </view>
           </view>
           
           <view class="order-info">
             <view class="info-item">
               <text class="label">设备编号:</text>
-              <text class="value">{{item.device_id}}</text>
+              <text class="value">{{item.device_id || '-'}}</text>
             </view>
             <view class="info-item">
               <text class="label">故障描述:</text>
-              <text class="value">{{item.fault_desc}}</text>
+              <text class="value">{{item.description || '无描述'}}</text>
             </view>
             <view class="info-item">
               <text class="label">报修时间:</text>
-              <text class="value">{{item.report_time}}</text>
+              <text class="value">{{item.created_at || '-'}}</text>
             </view>
             <view class="info-item">
               <text class="label">报修人:</text>
-              <text class="value">{{item.reporter}}</text>
+              <text class="value">{{item.creator_name || '未知'}}</text>
+            </view>
+            <view class="info-item" wx:if="{{item.fault_type}}">
+              <text class="label">故障类型:</text>
+              <text class="value">{{item.fault_type === 'mechanical' ? '机械故障' : 
+                (item.fault_type === 'electrical' ? '电气故障' : 
+                (item.fault_type === 'software' ? '软件故障' : '其他故障'))}}</text>
             </view>
           </view>
           
@@ -103,6 +117,11 @@
         <text class="empty-text">暂无处理中工单</text>
       </view>
     </view>
+  </view>
+  
+  <!-- 显示当前工单数量信息 -->
+  <view class="order-count" wx:if="{{(active === 0 && pendingList.length > 0) || (active === 1 && processingList.length > 0)}}">
+    当前显示: {{active === 0 ? pendingList.length : processingList.length}} 条记录
   </view>
   
   <view class="loading" wx:if="{{loading}}">

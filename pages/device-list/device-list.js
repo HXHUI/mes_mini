@@ -1,5 +1,5 @@
 // 引入API模块
-import { deviceApi } from '../../utils/api.js';
+import { deviceApi } from '../../utils/api/device.js';
 
 Page({
   data: {

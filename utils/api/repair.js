@@ -1,35 +1,6 @@
-// api.js
-import { request } from './request.js'
+import { request } from '../request.js'
 
-// 设备相关API
-const deviceApi = {
-  // 根据二维码获取设备信息
-  getDeviceByQrCode(code) {
-    return request({
-      url: `/api/device/qrcode/${code}`,
-      method: 'GET'
-    })
-  },
-  
-  // 获取设备详情
-  getDeviceDetail(deviceId) {
-    return request({
-      url: `/api/device/${deviceId}`,
-      method: 'GET'
-    })
-  },
-  
-  // 获取设备列表
-  getDeviceList(params) {
-    return request({
-      url: '/api/device',
-      method: 'GET',
-      data: params
-    })
-  }
-}
-
-// 故障申报相关API
+// 维修和工单相关API
 const repairApi = {
   // 提交故障申报
   submitFaultReport(data) {
@@ -103,43 +74,105 @@ const repairApi = {
     })
     
     return Promise.all(uploadTasks)
-  }
-}
-
-// 用户相关API
-const userApi = {
-  // 获取用户信息
-  getUserInfo() {
+  },
+  
+  // 获取工单列表
+  getWorkOrders(params) {
     return request({
-      url: '/api/user/info',
-      method: 'GET'
+      url: '/api/device-work-order',
+      method: 'GET',
+      data: params
     })
   },
   
-  // 登录
-  login(data) {
+  // 获取工单列表，按状态筛选
+  getWorkOrderList(status, page = 1, limit = 10) {
     return request({
-      url: '/api/login',
-      method: 'POST',
-      data
-    })
-  },
-  
-  // 微信登录
-  wechatLogin(code, userInfo) {
-    return request({
-      url: '/api/login/wechat',
-      method: 'POST',
+      url: '/api/device-work-order',
+      method: 'GET',
       data: {
-        code,
-        userInfo
+        type: 'REPAIR', // 默认只查询维修类型的工单
+        status: status,
+        page: page,
+        pageSize: limit
       }
     })
+  },
+  
+  // 获取待处理工单列表
+  getPendingWorkOrders(page = 1, limit = 10) {
+    return request({
+      url: '/api/device-work-order',
+      method: 'GET',
+      data: {
+        type: 'REPAIR',
+        status: 'pending',
+        page: page,
+        pageSize: limit
+      }
+    })
+  },
+  
+  // 获取处理中工单列表
+  getProcessingWorkOrders(page = 1, limit = 10) {
+    return request({
+      url: '/api/device-work-order',
+      method: 'GET',
+      data: {
+        type: 'REPAIR',
+        status: 'processing',
+        page: page,
+        pageSize: limit
+      }
+    })
+  },
+  
+  // 更新工单状态
+  updateWorkOrderStatus(orderId, status, data = {}) {
+    return request({
+      url: `/api/device-work-order/${orderId}`,
+      method: 'PUT',
+      data: {
+        status: status,
+        ...data
+      }
+    })
+  },
+  
+  // 接单处理
+  acceptWorkOrder(orderId, assigned_to) {
+    return request({
+      url: `/api/device-work-order/${orderId}/accept`,
+      method: 'POST',
+      data: {
+        assigned_to
+      }
+    });
+  },
+  
+  // 开始处理维修工单
+  startWorkOrder(orderId,actual_start) {
+    return request({
+      url: `/api/device-work-order/${orderId}`,
+      method: 'PUT',
+      data: {
+        actual_start
+      }
+    });
+  },
+  
+  // 完成工单
+  completeWorkOrder(orderId, completionData) {
+    return this.updateWorkOrderStatus(orderId, 'completed', completionData);
+  },
+  
+  // 获取工单图片
+  getWorkOrderImages(orderId) {
+    return request({
+      url: `/api/device-work-order/${orderId}/images`,
+      method: 'GET'
+    });
   }
 }
 
-export {
-  deviceApi,
-  repairApi,
-  userApi
-} 
+export { repairApi }; 

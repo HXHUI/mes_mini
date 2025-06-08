@@ -1,25 +1,52 @@
 // pages/login/login.js
-import { userApi } from '../../utils/api.js';
+import { userApi } from '../../utils/api/user.js';
 
 Page({
   data: {
-    employeeId: '',
+    username: '',
     password: '',
-    isLoading: false
+    isLoading: false,
+    isWechatLoading: false
   },
 
   onLoad: function () {
     // 检查是否有本地缓存的登录信息
     const token = wx.getStorageSync('token');
     if (token) {
-      // 如果已经登录，跳转到首页
-      this.navigateToIndex();
+      // 检查token是否有效
+      this.checkToken();
     }
   },
 
-  onEmployeeIdInput: function (e) {
+  checkToken: function() {
+    wx.showLoading({
+      title: '检查登录状态',
+    });
+
+    userApi.checkLoginStatus()
+      .then(res => {
+        wx.hideLoading();
+        if (res && res.code === 200) {
+          // token有效，跳转到首页
+          this.navigateToIndex();
+        } else {
+          // token无效，清除缓存
+          wx.removeStorageSync('token');
+          wx.removeStorageSync('userInfo');
+        }
+      })
+      .catch(err => {
+        wx.hideLoading();
+        console.error('检查登录状态失败', err);
+        // 出错时清除缓存
+        wx.removeStorageSync('token');
+        wx.removeStorageSync('userInfo');
+      });
+  },
+
+  onUsernameInput: function (e) {
     this.setData({
-      employeeId: e.detail.value
+      username: e.detail.value
     });
   },
 
@@ -30,12 +57,12 @@ Page({
   },
 
   handleLogin: function () {
-    const { employeeId, password } = this.data;
+    const { username, password } = this.data;
     
     // 表单验证
-    if (!employeeId) {
+    if (!username) {
       wx.showToast({
-        title: '请输入工号',
+        title: '请输入用户名',
         icon: 'none'
       });
       return;
@@ -55,39 +82,52 @@ Page({
     
     // 调用登录API
     userApi.login({
-      employeeId: employeeId,
+      username: username,
       password: password
     }).then(res => {
-      // 存储登录信息
-      wx.setStorageSync('token', res.data.token);
-      wx.setStorageSync('userInfo', res.data.userInfo);
-      
+      this.setData({
+        isLoading: false
+      });
+
+      if (res && res.code === 200 && res.data) {
+        // 存储登录信息
+        wx.setStorageSync('token', res.data.token);
+        wx.setStorageSync('userInfo', res.data.user);
+        
+        wx.showToast({
+          title: '登录成功',
+          icon: 'success',
+          duration: 1500,
+          success: () => {
+            // 跳转到首页
+            setTimeout(() => {
+              this.navigateToIndex();
+            }, 1500);
+          }
+        });
+      } else {
+        wx.showToast({
+          title: res.message || '登录失败',
+          icon: 'none'
+        });
+      }
+    }).catch(err => {
       this.setData({
         isLoading: false
       });
       
       wx.showToast({
-        title: '登录成功',
-        icon: 'success',
-        duration: 1500,
-        success: () => {
-          // 跳转到首页
-          setTimeout(() => {
-            this.navigateToIndex();
-          }, 1500);
-        }
+        title: err.message || '登录失败，请重试',
+        icon: 'none'
       });
-    }).catch(err => {
-      this.setData({
-        isLoading: false
-      });
+      
       console.error('登录失败', err);
     });
   },
   
   handleWechatLogin: function () {
-    wx.showLoading({
-      title: '正在登录',
+    this.setData({
+      isWechatLoading: true
     });
     
     // 调用微信登录API获取code
@@ -99,20 +139,28 @@ Page({
           // 获取用户信息
           this.getUserProfile(res.code);
         } else {
-          wx.hideLoading();
+          this.setData({
+            isWechatLoading: false
+          });
+          
           wx.showToast({
             title: '微信登录失败',
             icon: 'none'
           });
+          
           console.error('微信登录失败', res.errMsg);
         }
       },
       fail: (err) => {
-        wx.hideLoading();
+        this.setData({
+          isWechatLoading: false
+        });
+        
         wx.showToast({
           title: '微信登录失败',
           icon: 'none'
         });
+        
         console.error('微信登录失败', err);
       }
     });
@@ -129,11 +177,15 @@ Page({
         this.sendCodeToServer(code, userRes.userInfo);
       },
       fail: (err) => {
-        wx.hideLoading();
+        this.setData({
+          isWechatLoading: false
+        });
+        
         wx.showToast({
           title: '获取用户信息失败',
           icon: 'none'
         });
+        
         console.error('获取用户信息失败', err);
       }
     });
@@ -143,30 +195,43 @@ Page({
     // 调用微信登录API
     userApi.wechatLogin(code, wxUserInfo)
       .then(res => {
-        // 存储登录信息
-        wx.setStorageSync('token', res.data.token);
-        wx.setStorageSync('userInfo', res.data.userInfo);
-        
-        wx.hideLoading();
-        
-        wx.showToast({
-          title: '登录成功',
-          icon: 'success',
-          duration: 1500,
-          success: () => {
-            // 跳转到首页
-            setTimeout(() => {
-              this.navigateToIndex();
-            }, 1500);
-          }
+        this.setData({
+          isWechatLoading: false
         });
+        
+        if (res && res.code === 200 && res.data) {
+          // 存储登录信息
+          wx.setStorageSync('token', res.data.token);
+          wx.setStorageSync('userInfo', res.data.user);
+          
+          wx.showToast({
+            title: '登录成功',
+            icon: 'success',
+            duration: 1500,
+            success: () => {
+              // 跳转到首页
+              setTimeout(() => {
+                this.navigateToIndex();
+              }, 1500);
+            }
+          });
+        } else {
+          wx.showToast({
+            title: res.message || '微信登录失败',
+            icon: 'none'
+          });
+        }
       })
       .catch(err => {
-        wx.hideLoading();
+        this.setData({
+          isWechatLoading: false
+        });
+        
         wx.showToast({
-          title: '登录失败',
+          title: err.message || '微信登录失败',
           icon: 'none'
         });
+        
         console.error('微信登录失败', err);
       });
   },

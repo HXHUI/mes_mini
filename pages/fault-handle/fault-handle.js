@@ -1,3 +1,7 @@
+// 引入API模块
+import { repairApi } from '../../utils/api/repair.js';
+import { userApi } from '../../utils/api/user.js';
+
 Page({
   data: {
     active: 0,
@@ -8,26 +12,50 @@ Page({
     processingPage: 1,
     pendingHasMore: true,
     processingHasMore: true,
-    limit: 10
+    limit: 10,
+    userInfo: null
   },
 
   onLoad: function () {
-    this.loadData()
+    // 获取用户信息
+    this.getUserInfo();
+    this.loadData();
   },
 
   onPullDownRefresh: function () {
-    this.resetData()
+    this.resetData();
     this.loadData(() => {
-      wx.stopPullDownRefresh()
-    })
+      wx.stopPullDownRefresh();
+    });
   },
 
   onReachBottom: function () {
     if (this.data.active === 0 && this.data.pendingHasMore) {
-      this.loadPendingOrders()
+      this.loadPendingOrders();
     } else if (this.data.active === 1 && this.data.processingHasMore) {
-      this.loadProcessingOrders()
+      this.loadProcessingOrders();
     }
+  },
+
+  getUserInfo: function() {
+    // 尝试从本地存储获取用户信息
+    const userInfo = wx.getStorageSync('userInfo');
+    if (userInfo) {
+      this.setData({ userInfo });
+      return;
+    }
+
+    // 如果本地没有，从服务器获取
+    userApi.getUserInfo()
+      .then(res => {
+        if (res.data) {
+          this.setData({ userInfo: res.data });
+          wx.setStorageSync('userInfo', res.data);
+        }
+      })
+      .catch(err => {
+        console.error('获取用户信息失败', err);
+      });
   },
 
   resetData: function () {
@@ -38,167 +66,296 @@ Page({
       processingPage: 1,
       pendingHasMore: true,
       processingHasMore: true
-    })
+    });
   },
 
   loadData: function (callback) {
     if (this.data.active === 0) {
-      this.loadPendingOrders(callback)
+      this.loadPendingOrders(callback);
     } else {
-      this.loadProcessingOrders(callback)
+      this.loadProcessingOrders(callback);
     }
+  },
+
+  // 处理API返回的数据，格式化显示信息
+  formatWorkOrderData: function(order) {
+    // 确保对象字段存在，避免undefined错误
+    if (!order) return null;
+    
+    // 创建工单对象副本，避免修改原始数据
+    const formattedOrder = {...order};
+    
+    // 格式化创建时间
+    if (formattedOrder.created_at) {
+      const date = new Date(formattedOrder.created_at);
+      if (!isNaN(date.getTime())) {
+        formattedOrder.created_at = date.toLocaleString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        }).replace(/\//g, '-');
+      }
+    }
+    
+    return formattedOrder;
   },
 
   loadPendingOrders: function (callback) {
     if (this.data.loading || !this.data.pendingHasMore) {
       if (typeof callback === 'function') {
-        callback()
+        callback();
       }
-      return
+      return;
     }
 
-    this.setData({ loading: true })
+    this.setData({ loading: true });
 
-    // 模拟获取待处理工单列表
-    setTimeout(() => {
-      const newOrders = this.generateMockOrders('pending')
-      
-      this.setData({
-        pendingList: [...this.data.pendingList, ...newOrders],
-        pendingPage: this.data.pendingPage + 1,
-        pendingHasMore: newOrders.length === this.data.limit,
-        loading: false
+    // 使用API获取待处理工单列表
+    repairApi.getPendingWorkOrders(this.data.pendingPage, this.data.limit)
+      .then(res => {
+        if (res && res.code === 200) {
+          // 检查返回数据结构
+          let newOrders = [];
+          let total = 0;
+          
+          // 根据实际API返回格式处理数据
+          if (res.data) {
+            if (Array.isArray(res.data)) {
+              // 如果直接返回数组
+              newOrders = res.data.map(this.formatWorkOrderData);
+              total = res.data.length + this.data.pendingList.length + 10; // 假设还有更多
+            } else if (res.data.list && Array.isArray(res.data.list)) {
+              // 如果返回分页对象
+              newOrders = res.data.list.map(this.formatWorkOrderData);
+              total = res.data.total || 0;
+            } else if (res.data.items && Array.isArray(res.data.items)) {
+              // 如果返回分页对象（另一种格式）
+              newOrders = res.data.items.map(this.formatWorkOrderData);
+              total = res.data.total || 0;
+            } else {
+              // 单个对象的情况
+              newOrders = [this.formatWorkOrderData(res.data)];
+              total = 1;
+            }
+          }
+          
+          console.log('获取到待处理工单数:', newOrders.length);
+          
+          this.setData({
+            pendingList: [...this.data.pendingList, ...newOrders.filter(item => item !== null)],
+            pendingPage: this.data.pendingPage + 1,
+            pendingHasMore: this.data.pendingList.length + newOrders.length < total,
+            loading: false
+          });
+        } else {
+          this.setData({ loading: false, pendingHasMore: false });
+        }
+
+        if (typeof callback === 'function') {
+          callback();
+        }
       })
-
-      if (typeof callback === 'function') {
-        callback()
-      }
-    }, 500)
+      .catch(err => {
+        console.error('获取待处理工单失败', err);
+        this.setData({ loading: false });
+        
+        wx.showToast({
+          title: '获取工单失败，请重试',
+          icon: 'none'
+        });
+        
+        if (typeof callback === 'function') {
+          callback();
+        }
+      });
   },
 
   loadProcessingOrders: function (callback) {
     if (this.data.loading || !this.data.processingHasMore) {
       if (typeof callback === 'function') {
-        callback()
+        callback();
       }
-      return
+      return;
     }
 
-    this.setData({ loading: true })
+    this.setData({ loading: true });
 
-    // 模拟获取处理中工单列表
-    setTimeout(() => {
-      const newOrders = this.generateMockOrders('in_progress')
-      
-      this.setData({
-        processingList: [...this.data.processingList, ...newOrders],
-        processingPage: this.data.processingPage + 1,
-        processingHasMore: newOrders.length === this.data.limit,
-        loading: false
+    // 使用API获取处理中工单列表
+    repairApi.getProcessingWorkOrders(this.data.processingPage, this.data.limit)
+      .then(res => {
+        if (res && res.code === 200) {
+          // 检查返回数据结构
+          let newOrders = [];
+          let total = 0;
+          
+          // 根据实际API返回格式处理数据
+          if (res.data) {
+            if (Array.isArray(res.data)) {
+              // 如果直接返回数组
+              newOrders = res.data.map(this.formatWorkOrderData);
+              total = res.data.length + this.data.processingList.length + 10; // 假设还有更多
+            } else if (res.data.list && Array.isArray(res.data.list)) {
+              // 如果返回分页对象
+              newOrders = res.data.list.map(this.formatWorkOrderData);
+              total = res.data.total || 0;
+            } else if (res.data.items && Array.isArray(res.data.items)) {
+              // 如果返回分页对象（另一种格式）
+              newOrders = res.data.items.map(this.formatWorkOrderData);
+              total = res.data.total || 0;
+            } else {
+              // 单个对象的情况
+              newOrders = [this.formatWorkOrderData(res.data)];
+              total = 1;
+            }
+          }
+          
+          console.log('获取到处理中工单数:', newOrders.length);
+          
+          this.setData({
+            processingList: [...this.data.processingList, ...newOrders.filter(item => item !== null)],
+            processingPage: this.data.processingPage + 1,
+            processingHasMore: this.data.processingList.length + newOrders.length < total,
+            loading: false
+          });
+        } else {
+          this.setData({ loading: false, processingHasMore: false });
+        }
+
+        if (typeof callback === 'function') {
+          callback();
+        }
       })
-
-      if (typeof callback === 'function') {
-        callback()
-      }
-    }, 500)
-  },
-
-  generateMockOrders: function (status) {
-    const page = status === 'pending' ? this.data.pendingPage : this.data.processingPage
-    
-    if (page > 2) {
-      return []
-    }
-
-    const orders = []
-    const devices = ['注塑机A1', '切割机B2', '包装机C3', '打包机D4', '焊接机E5']
-    
-    for (let i = 0; i < this.data.limit; i++) {
-      const deviceName = devices[Math.floor(Math.random() * devices.length)]
-      const urgencyLevels = ['low', 'medium', 'high']
-      const urgency = urgencyLevels[Math.floor(Math.random() * urgencyLevels.length)]
-      
-      orders.push({
-        id: `${status}_${page}_${i}`,
-        device_name: deviceName,
-        device_id: `DEV_${Math.floor(Math.random() * 1000)}`,
-        fault_desc: `${deviceName}出现${status === 'pending' ? '故障' : '异常'}，需要${status === 'pending' ? '处理' : '维修'}`,
-        report_time: this.getRandomTime(),
-        reporter: '张三',
-        status: status,
-        urgency: urgency
-      })
-    }
-    
-    return orders
-  },
-  
-  getRandomTime: function () {
-    const now = new Date()
-    const randomDays = Math.floor(Math.random() * 7)
-    const randomHours = Math.floor(Math.random() * 24)
-    
-    now.setDate(now.getDate() - randomDays)
-    now.setHours(now.getHours() - randomHours)
-    
-    return now.toISOString().replace('T', ' ').substring(0, 16)
+      .catch(err => {
+        console.error('获取处理中工单失败', err);
+        this.setData({ loading: false });
+        
+        wx.showToast({
+          title: '获取工单失败，请重试',
+          icon: 'none'
+        });
+        
+        if (typeof callback === 'function') {
+          callback();
+        }
+      });
   },
 
   handleTabChange: function (e) {
-    const active = e.detail.index
-    this.setData({ active })
-    
-    if (active === 0 && this.data.pendingList.length === 0) {
-      this.loadPendingOrders()
-    } else if (active === 1 && this.data.processingList.length === 0) {
-      this.loadProcessingOrders()
+    const index = parseInt(e.currentTarget.dataset.index);
+    if (this.data.active !== index) {
+      this.setData({ active: index });
+      
+      if (index === 0 && this.data.pendingList.length === 0) {
+        this.loadPendingOrders();
+      } else if (index === 1 && this.data.processingList.length === 0) {
+        this.loadProcessingOrders();
+      }
     }
   },
 
   viewDetail: function (e) {
-    const id = e.currentTarget.dataset.id
+    const id = e.currentTarget.dataset.id;
     wx.navigateTo({
       url: `/pages/order-detail/order-detail?id=${id}`
-    })
+    });
   },
 
   handleOrder: function (e) {
-    const id = e.currentTarget.dataset.id
-    const index = e.currentTarget.dataset.index
+    const id = e.currentTarget.dataset.id;
+    const index = e.currentTarget.dataset.index;
     
     wx.showModal({
       title: '确认接单',
-      content: '是否确认处理此故障工单？',
+      content: '确定接受该工单并开始处理？',
       success: (res) => {
         if (res.confirm) {
-          // 更新工单状态
-          const pendingList = this.data.pendingList
-          const order = pendingList[index]
+          this.takeOrder(id, index);
+        }
+      }
+    });
+  },
+  
+  takeOrder: function(orderId, index) {
+    wx.showLoading({
+      title: '正在接单...',
+    });
+    
+    // 检查是否有用户信息
+    if (!this.data.userInfo || !this.data.userInfo.id) {
+      wx.hideLoading();
+      wx.showToast({
+        title: '获取用户信息失败，请重新登录',
+        icon: 'none'
+      });
+      return;
+    }
+    
+    // 调用接单处理API
+    wx.request({
+      url: getApp().globalData.baseUrl + `/api/device-work-order/${orderId}/accept`,
+      method: 'POST',
+      header: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + wx.getStorageSync('token')
+      },
+      data: {
+        id: orderId,
+        assigned_to: this.data.userInfo.id,
+        status: 'in_progress'
+      },
+      success: (res) => {
+        wx.hideLoading();
+        
+        if (res.statusCode === 200 && res.data && res.data.code === 200) {
+          wx.showToast({
+            title: '接单成功',
+            icon: 'success'
+          });
           
-          // 将工单从待处理移到处理中
-          pendingList.splice(index, 1)
-          order.status = 'in_progress'
+          // 将工单从待处理列表移到处理中列表
+          const order = this.data.pendingList[index];
+          const updatedOrder = {
+            ...order,
+            status: 'in_progress', // 状态改为in_progress
+            assigned_to: this.data.userInfo.id,
+            assigned_to_name: this.data.userInfo.real_name || this.data.userInfo.name || '维修人员'
+          };
+          
+          const pendingList = [...this.data.pendingList];
+          pendingList.splice(index, 1);
           
           this.setData({
             pendingList,
-            processingList: [order, ...this.data.processingList]
-          })
-          
+            processingList: [updatedOrder, ...this.data.processingList]
+          });
+        } else {
+          const errMsg = res.data?.message || '接单失败';
           wx.showToast({
-            title: '已接单',
-            icon: 'success'
-          })
+            title: errMsg,
+            icon: 'none'
+          });
         }
+      },
+      fail: (err) => {
+        wx.hideLoading();
+        console.error('接单失败', err);
+        
+        wx.showToast({
+          title: '接单失败，请检查网络连接',
+          icon: 'none'
+        });
       }
-    })
+    });
   },
-
+  
   completeOrder: function (e) {
-    const id = e.currentTarget.dataset.id
-    const index = e.currentTarget.dataset.index
+    const id = e.currentTarget.dataset.id;
+    const index = e.currentTarget.dataset.index;
     
     wx.navigateTo({
-      url: `/pages/complete-order/complete-order?id=${id}&index=${index}`
-    })
+      url: `/pages/order-complete/order-complete?id=${id}&index=${index}`
+    });
   }
 }) 

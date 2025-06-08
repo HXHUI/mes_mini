@@ -10,7 +10,8 @@
     "pages/repair-orders/repair-orders",
     "pages/order-detail/order-detail",
     "pages/fault-handle/fault-handle",
-    "pages/device-list/device-list"
+    "pages/device-list/device-list",
+    "pages/maintenance-orders/maintenance-orders"
   ],
   "window": {
     "backgroundTextStyle": "light",

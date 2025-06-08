@@ -1,4 +1,4 @@
-<!-- pages/repair-orders/repair-orders.wxml -->
+<!-- pages/maintenance-orders/maintenance-orders.wxml -->
 <view class="container">
   <view class="fixed-header">
     <view class="filter-bar">
@@ -49,44 +49,45 @@
         
         <view class="order-content">
           <view class="device-info">
-            <view class="device-name">{{item.deviceName || item.device_name || '未知设备'}}</view>
-            <view class="device-id">设备编号：{{item.deviceId || item.device_id || '未知'}}</view>
+            <view class="device-name">{{item.device_name || '未知设备'}}</view>
+            <view class="device-id">设备编号：{{item.device_id || '未知'}}</view>
           </view>
           
-          <view class="fault-type">
-            <text class="label">故障类型：</text>
+          <view class="maintenance-type">
+            <text class="label">保养类型：</text>
             <text class="value">{{
-              (item.faultType === 'mechanical' || item.fault_type === 'mechanical') ? '机械故障' : 
-              (item.faultType === 'electrical' || item.fault_type === 'electrical') ? '电气故障' : 
-              (item.faultType === 'software' || item.fault_type === 'software') ? '软件故障' : 
-              (item.faultType === 'other' || item.fault_type === 'other') ? '其他故障' : 
-              (item.faultType || item.fault_type || '未分类')
+              item.maintenance_type === 'routine' ? '日常保养' : 
+              item.maintenance_type === 'periodic' ? '定期保养' : 
+              item.maintenance_type === 'preventive' ? '预防性保养' : 
+              item.maintenance_type === 'corrective' ? '纠正性保养' : 
+              item.plan_id ? '计划保养' :
+              '未分类'
             }}</text>
           </view>
           
-          <view class="fault-desc">
-            <text class="label">故障描述：</text>
-            <text class="value">{{item.faultDesc || item.description || '无描述'}}</text>
+          <view class="maintenance-desc">
+            <text class="label">保养内容：</text>
+            <text class="value">{{item.description || '无描述'}}</text>
           </view>
           
           <view class="time-info">
-            <view class="report-time">
-              <text class="label">报修时间：</text>
-              <text class="value">{{item.reportTime || item.created_at || '--'}}</text>
+            <view class="schedule-time">
+              <text class="label">计划时间：</text>
+              <text class="value">{{item.scheduled_at || item.created_at || '--'}}</text>
             </view>
-            <view class="reporter">
-              <text class="label">报修人：</text>
-              <text class="value">{{item.reporter || item.creator_name || '未知'}}</text>
+            <view class="planner">
+              <text class="label">计划人：</text>
+              <text class="value">{{item.creator_name || '未知'}}</text>
             </view>
           </view>
         </view>
         
         <view class="order-footer">
-          <view class="urgency-tag {{item.urgency || item.urgency_level}}">
-            {{(item.urgency === 'high' || item.urgency_level === 'high') ? '高' : 
-              (item.urgency === 'urgent' || item.urgency_level === 'urgent') ? '紧急' :
-              (item.urgency === 'medium' || item.urgency_level === 'medium') ? '中' : 
-              (item.urgency === 'low' || item.urgency_level === 'low') ? '低' : '普通'}}
+          <view class="priority-tag {{item.priority_level}}">
+            {{item.priority_level === 'high' ? '高' : 
+              item.priority_level === 'urgent' ? '紧急' :
+              item.priority_level === 'medium' ? '中' : 
+              item.priority_level === 'low' ? '低' : '普通'}}
           </view>
           
           <view class="btn-group">
@@ -104,7 +105,7 @@
     
     <view wx:if="{{orderList.length === 0 && !loading}}" class="empty-list">
       <image class="empty-icon" src="/images/icons/empty.png" mode="aspectFit"></image>
-      <text class="empty-text">暂无维修工单</text>
+      <text class="empty-text">暂无保养工单</text>
     </view>
   </view>
   

@@ -1,5 +1,5 @@
 // auth.js
-import { userApi } from './api'
+import { userApi } from './api/user.js'
 
 // 登录
 export const login = () => {

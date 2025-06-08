@@ -1,0 +1,171 @@
+/* pages/index/index.wxss */
+.container {
+  padding: 0;
+  background-color: #f7f8fa;
+  min-height: 100vh;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding-bottom: 100rpx;
+}
+
+/* 顶部欢迎区 */
+.header {
+  background-color: #0078D7;
+  padding: 40rpx 30rpx;
+  color: #ffffff;
+  margin-bottom: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.greeting {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.welcome {
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome text:first-child {
+  font-size: 44rpx;
+  font-weight: 600;
+  margin-bottom: 12rpx;
+}
+
+.welcome-text {
+  font-size: 28rpx;
+  opacity: 0.9;
+}
+
+.avatar {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  background-color: #ffffff;
+  border: 4rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+/* 统计区域 */
+.statistics-area {
+  width: calc(100% - 60rpx);
+  margin: 30rpx auto;
+  display: flex;
+  justify-content: space-between;
+  background-color: #ffffff;
+  border-radius: 16rpx;
+  padding: 30rpx 20rpx;
+  box-shadow: 0 0 0 2rpx #0078D7;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.stat-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.stat-card:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 20%;
+  height: 60%;
+  width: 1rpx;
+  background-color: #eeeeee;
+}
+
+.stat-number {
+  font-size: 52rpx;
+  font-weight: bold;
+  color: #0078D7;
+  margin-bottom: 10rpx;
+}
+
+.stat-label {
+  font-size: 26rpx;
+  color: #999999;
+  text-align: center;
+}
+
+/* 功能卡片区 */
+.function-area {
+  padding: 20rpx 30rpx;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 24rpx;
+  position: relative;
+  padding-left: 16rpx;
+}
+
+.section-title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6rpx;
+  height: 28rpx;
+  background-color: #0078D7;
+  border-radius: 3rpx;
+}
+
+.function-cards {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.function-card {
+  width: 100%;
+  height: 160rpx;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  color: #ffffff;
+  margin-bottom: 24rpx;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  box-shadow: 0 8rpx 16rpx rgba(0, 0, 0, 0.12);
+  transition: transform 0.2s ease;
+  box-sizing: border-box;
+}
+
+.function-card:active {
+  transform: scale(0.98);
+}
+
+.card-icon {
+  width: 64rpx;
+  height: 64rpx;
+  margin-right: 24rpx;
+}
+
+.card-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  margin-bottom: 10rpx;
+}
+
+.card-desc {
+  font-size: 24rpx;
+  opacity: 0.9;
+} 

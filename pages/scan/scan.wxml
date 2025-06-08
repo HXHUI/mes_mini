@@ -1,0 +1,49 @@
+<!-- pages/scan/scan.wxml -->
+<view class="container">
+  <view class="scan-area">
+    <camera 
+      device-position="back" 
+      flash="auto" 
+      binderror="error" 
+      class="camera" 
+      mode="scanCode"
+      bindscancode="handleScanCode"
+    ></camera>
+    
+    <cover-view class="scan-frame">
+      <cover-view class="scan-line"></cover-view>
+    </cover-view>
+    
+    <cover-view class="tips">
+      <cover-view class="tip-text">请将二维码放入框内</cover-view>
+    </cover-view>
+  </view>
+  
+  <view class="scan-controls">
+    <view class="control-btn" bindtap="toggleFlash">
+      <image class="btn-icon" src="/images/icons/flash.png" mode="aspectFit"></image>
+      <text class="btn-text">闪光灯</text>
+    </view>
+    
+    <view class="control-btn" bindtap="inputCode">
+      <image class="btn-icon" src="/images/icons/keyboard.png" mode="aspectFit"></image>
+      <text class="btn-text">手动输入</text>
+    </view>
+  </view>
+
+  <view class="scan-history" wx:if="{{scanHistory.length > 0}}">
+    <view class="history-title">最近扫码</view>
+    <view class="history-list">
+      <view 
+        class="history-item" 
+        wx:for="{{scanHistory}}" 
+        wx:key="time" 
+        bindtap="goToDeviceDetail" 
+        data-id="{{item.id}}"
+      >
+        <view class="history-name">{{item.name}}</view>
+        <view class="history-time">{{item.time}}</view>
+      </view>
+    </view>
+  </view>
+</view> 

@@ -1,0 +1,79 @@
+<!-- pages/index/index.wxml -->
+<view class="container">
+  <!-- 顶部欢迎区 -->
+  <view class="header">
+    <view class="greeting">
+      <view class="welcome">
+        <text>Hi，{{userInfo.name || '张工程师'}}</text>
+        <text class="welcome-text">欢迎使用MES生产执行管理系统</text>
+      </view>
+      <image class="avatar" src="{{userInfo.avatar || '/images/icons/avatar-default.png'}}" mode="aspectFill"></image>
+    </view>
+  </view>
+  
+  <!-- 统计区域 -->
+  <view class="statistics-area">
+    <view class="stat-card" bindtap="viewWorkOrders" data-type="pending">
+      <text class="stat-number">{{statistics.todoCount || 5}}</text>
+      <text class="stat-label">待处理</text>
+    </view>
+    <view class="stat-card" bindtap="viewWorkOrders" data-type="in_progress">
+      <text class="stat-number">{{statistics.processingCount || 3}}</text>
+      <text class="stat-label">处理中</text>
+    </view>
+    <view class="stat-card" bindtap="viewWorkOrders" data-type="completed">
+      <text class="stat-number">{{statistics.completedCount || 12}}</text>
+      <text class="stat-label">已完成</text>
+    </view>
+  </view>
+  
+  <!-- 功能卡片区 -->
+  <view class="function-area">
+    <view class="section-title">快捷功能</view>
+    <view class="function-cards">
+      <!-- 故障申报卡片 -->
+      <view 
+        class="function-card" 
+        style="background-color: #2196F3"
+        bindtap="navigateTo"
+        data-path="/pages/fault-report/fault-report"
+      >
+        <image class="card-icon" src="/images/icons/report.png" mode="aspectFit"></image>
+        <view class="card-info">
+          <text class="card-title">故障申报</text>
+          <text class="card-desc">随在线申报</text>
+        </view>
+      </view>
+      
+      <!-- 故障处理卡片 -->
+      <view 
+        class="function-card" 
+        style="background-color: #9C27B0"
+        bindtap="navigateTo"
+        data-path="/pages/fault-handle/fault-handle"
+      >
+        <image class="card-icon" src="/images/icons/repair.png" mode="aspectFit"></image>
+        <view class="card-info">
+          <text class="card-title">故障处理</text>
+          <text class="card-desc">单处理</text>
+        </view>
+      </view>
+      
+      <!-- 扫码维修卡片 -->
+      <view 
+        class="function-card" 
+        style="background-color: #FF7043"
+        bindtap="handleScan"
+      >
+        <image class="card-icon" src="/images/icons/scan.png" mode="aspectFit"></image>
+        <view class="card-info">
+          <text class="card-title">扫码维修</text>
+          <text class="card-desc">扫码维修</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 页面底部空白占位，确保内容不被TabBar遮挡 -->
+  <view style="height: 100rpx;"></view>
+</view> 

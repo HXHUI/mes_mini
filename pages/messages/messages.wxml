@@ -1,0 +1,43 @@
+<!-- pages/messages/messages.wxml -->
+<view class="container">
+  <view class="message-list">
+    <block wx:if="{{messageList.length > 0}}">
+      <view 
+        wx:for="{{messageList}}" 
+        wx:key="id" 
+        class="message-item {{item.read ? 'read' : 'unread'}}"
+        bindtap="viewMessage"
+        data-index="{{index}}"
+      >
+        <view class="message-icon {{item.type}}">
+          <view class="unread-dot" wx:if="{{!item.read}}"></view>
+        </view>
+        <view class="message-content">
+          <view class="message-title">{{item.title}}</view>
+          <view class="message-preview">{{item.content}}</view>
+          <view class="message-time">{{item.time}}</view>
+        </view>
+        <view class="message-arrow">
+          <view class="arrow"></view>
+        </view>
+      </view>
+    </block>
+    
+    <view wx:if="{{messageList.length === 0 && !loading}}" class="empty-list">
+      <view class="empty-icon"></view>
+      <view class="empty-text">暂无消息</view>
+    </view>
+  </view>
+  
+  <view class="loading" wx:if="{{loading}}">
+    <view class="loading-icon"></view>
+    <view class="loading-text">加载中...</view>
+  </view>
+  
+  <view class="load-all" wx:if="{{!hasMore && messageList.length > 0}}">
+    已加载全部消息
+  </view>
+  
+  <!-- 底部空白占位，防止内容被TabBar遮挡 -->
+  <view style="height: 100rpx;"></view>
+</view> 

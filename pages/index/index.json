@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "MES生产执行管理",
+  "navigationBarBackgroundColor": "#0078D7",
+  "navigationBarTextStyle": "white",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark"
+} 

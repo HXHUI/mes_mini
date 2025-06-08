@@ -1,0 +1,199 @@
+/**app.wxss**/
+page {
+  height: 100%;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+  background-color: #f7f8fa;
+  box-sizing: border-box;
+  -webkit-text-size-adjust: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* 图标字体 */
+@font-face {
+  font-family: 'iconfont';
+  src: url('data:font/woff2;charset=utf-8;base64,d09GMgABAAAAAAO0AAsAAAAACFwAAANlAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHFQGYACDMgqDaIM0ATYCJAMUCwwABCAFhGcHWhtSBxHVm8PIfiRkp1qbjMjDlMgkWplpMng4fA/J+3Y3yWZP5oM+PiLJolsIheJJJDQS1dPxENfpvQSIoDpLyiVRXCOqmDwhVQzXmOWKzeRbJKYlP+EwX8T5+QFrUEA66jmIN79dgMu1mw3g5fWdgwJtDYyNNSluAQokUOCyx9gFF3AJCfD/EaAqiTTAKOm3jCb2GeBR5KyKcl3dFhB7NizRzGxpCu1MecnKYmJNad+bZSZw3vn5eIUysUdlErjTjXPtPLy7jncs+p+IbgRh0J0BBG2QQBqQRU71uROkhmlpFPX1r1aygSKK2p11J/EuRDiEdzwoNCKaLn94RBIViGYn2QXBJrRAvLskZxoLd5t4D0LDewgfQsOHEC+1QZ4A44AsqIFfEGWVDYJMEqXm+vbeufVg51Z27dFOu3v3pDt3TphX9tGduwdlpXyPuJHl5sU79nV17t6/y+4dktl8YndnkVs1GRTK2XmgCdLBsQPd7Dd/H/MjjfrjPw5s3jKXQvnAZsutB0PYdXAIu/bA5r3hLM8s3hTGvnUfZeumZyeO7R0pqzkZLp8aKtN/kWbTJNrUp1tpZHt1Ozq03Oq2yoPJNY3LpX6wH1Ut0Tp8l0qdFpavL/Cz3LW0JEmVRUmUVbL8nVp2c2aWVXu5fMOy8sO01tCwtrXnYeZHKucBXYr8JWs+xJdfpKRpg5Kmpf2Tr0WW+Wo1TS+z+pNd0usbx7Xf9idXJm6a65yvvZ8vkH3rvndZsvZJfMZ3tM7cK/I/nPwE2L/t/5XfPgLwF/nvFsBfhD68OvzX/p9HrgPwfqmrE3iYUZxQJcAd/hc88s2ZoOqLuW0VNi3LcF3bUu9aCbIaQLciWQ0gqU4GSdwYJDVYglYaqzBo3QpUNdgFs5oiYzSKGiBMOQRE/XZA1O0NJP1eQFLmHbTqDwJVwy5hMFuRc2bRNnJk4sAFq2hN7YY2CbbCsLRdJ9SjUIg0UWCT5BVy3DZVcVTRxKg4TrJZ0nGPTtFxTlFjDrFoY9xRNhsQO9bTscdtjKUdHDQqhqxAVSgN1c1gJgJWwmBRbZotb0NC6t2EgY32mpDHQoLQzYICZlI8Cwpzp5JaUpGRQvVCJFvLnrIPOlQ6bVOSJswoVsR4rGGZAeF2sXpqsYtLFFPVwYKKEg1pJWrTlV9nmCdvAVXcYw+hRIoiGvGITwIsvJqFmcQOWqFV6sBOLbHEpFkdAAAA') format('woff2');
+}
+
+.icon {
+  font-family: "iconfont" !important;
+  font-size: 48rpx;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-home:before {
+  content: "\e7c6";
+}
+
+.icon-home-fill:before {
+  content: "\e867";
+}
+
+.icon-message:before {
+  content: "\e78a";
+}
+
+.icon-message-fill:before {
+  content: "\e883";
+}
+
+.icon-user:before {
+  content: "\e7ae";
+}
+
+.icon-user-fill:before {
+  content: "\e787";
+}
+
+.container {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  box-sizing: border-box;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.card {
+  width: 100%;
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+}
+
+button {
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  line-height: normal;
+  box-sizing: border-box;
+}
+
+button::after {
+  border: none;
+  outline: none;
+}
+
+.btn-primary {
+  background-color: #4285f4 !important;
+  color: white;
+  border: none;
+}
+
+.btn-primary:active {
+  background-color: #3367d6 !important;
+}
+
+.btn-outline {
+  background-color: white;
+  color: #4285f4;
+  border: 1px solid #4285f4;
+}
+
+.btn-block {
+  width: 100%;
+  margin-top: 30rpx;
+}
+
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-between {
+  justify-content: space-between;
+}
+
+.flex-center {
+  justify-content: center;
+  align-items: center;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-primary {
+  color: #4285f4;
+}
+
+.text-danger {
+  color: #ea4335;
+}
+
+.text-success {
+  color: #34a853;
+}
+
+.text-warning {
+  color: #fbbc05;
+}
+
+.text-gray {
+  color: #999;
+}
+
+.font-bold {
+  font-weight: bold;
+}
+
+.margin-top-sm {
+  margin-top: 10rpx;
+}
+
+.margin-top {
+  margin-top: 20rpx;
+}
+
+.margin-top-lg {
+  margin-top: 40rpx;
+}
+
+.margin-bottom-sm {
+  margin-bottom: 10rpx;
+}
+
+.margin-bottom {
+  margin-bottom: 20rpx;
+}
+
+.margin-bottom-lg {
+  margin-bottom: 40rpx;
+}
+
+.padding-sm {
+  padding: 10rpx;
+}
+
+.padding {
+  padding: 20rpx;
+}
+
+.padding-lg {
+  padding: 40rpx;
+}
+
+.divider {
+  height: 1px;
+  background-color: #eee;
+  width: 100%;
+  margin: 20rpx 0;
+}

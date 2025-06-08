@@ -1,0 +1,119 @@
+<!-- pages/order-detail/order-detail.wxml -->
+<view class="container">
+  <view class="order-header">
+    <view class="order-id">工单号：{{orderInfo.id}}</view>
+    <view class="order-status {{orderInfo.status}}">
+      {{orderInfo.status === 'pending' ? '待处理' : (orderInfo.status === 'processing' ? '处理中' : '已完成')}}
+    </view>
+  </view>
+  
+  <view class="order-section">
+    <view class="section-title">设备信息</view>
+    <view class="info-item">
+      <text class="label">设备名称：</text>
+      <text class="value">{{orderInfo.deviceName}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">设备编号：</text>
+      <text class="value">{{orderInfo.deviceId}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">设备位置：</text>
+      <text class="value">{{orderInfo.deviceLocation}}</text>
+    </view>
+  </view>
+  
+  <view class="order-section">
+    <view class="section-title">故障信息</view>
+    <view class="info-item">
+      <text class="label">故障类型：</text>
+      <text class="value">{{orderInfo.faultType}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">紧急程度：</text>
+      <text class="value urgency {{orderInfo.urgency}}">
+        {{orderInfo.urgency === 'high' ? '紧急' : (orderInfo.urgency === 'medium' ? '一般' : '普通')}}
+      </text>
+    </view>
+    <view class="info-item description">
+      <text class="label">故障描述：</text>
+      <text class="value">{{orderInfo.faultDesc}}</text>
+    </view>
+  </view>
+  
+  <view class="order-section">
+    <view class="section-title">报修信息</view>
+    <view class="info-item">
+      <text class="label">报修人：</text>
+      <text class="value">{{orderInfo.reporter}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">联系电话：</text>
+      <text class="value">{{orderInfo.contactPhone}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">报修时间：</text>
+      <text class="value">{{orderInfo.reportTime}}</text>
+    </view>
+  </view>
+  
+  <view class="order-section" wx:if="{{orderInfo.faultImages && orderInfo.faultImages.length > 0}}">
+    <view class="section-title">故障图片</view>
+    <view class="image-list">
+      <image 
+        wx:for="{{orderInfo.faultImages}}" 
+        wx:key="*this" 
+        src="{{item}}" 
+        mode="aspectFill" 
+        class="fault-image" 
+        bindtap="previewImage" 
+        data-url="{{item}}"
+      ></image>
+    </view>
+  </view>
+  
+  <view class="order-section" wx:if="{{orderInfo.status !== 'pending'}}">
+    <view class="section-title">处理信息</view>
+    <view class="info-item">
+      <text class="label">处理人：</text>
+      <text class="value">{{orderInfo.handler || '--'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">接单时间：</text>
+      <text class="value">{{orderInfo.handleTime || '--'}}</text>
+    </view>
+    <view class="info-item description" wx:if="{{orderInfo.handleDesc}}">
+      <text class="label">处理说明：</text>
+      <text class="value">{{orderInfo.handleDesc}}</text>
+    </view>
+  </view>
+  
+  <view class="order-section" wx:if="{{orderInfo.status === 'completed'}}">
+    <view class="section-title">完成信息</view>
+    <view class="info-item">
+      <text class="label">完成时间：</text>
+      <text class="value">{{orderInfo.completeTime || '--'}}</text>
+    </view>
+    <view class="info-item description" wx:if="{{orderInfo.solutionDesc}}">
+      <text class="label">解决方案：</text>
+      <text class="value">{{orderInfo.solutionDesc}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">使用材料：</text>
+      <text class="value">{{orderInfo.usedMaterials || '无'}}</text>
+    </view>
+  </view>
+  
+  <view class="action-bar" wx:if="{{orderInfo.status === 'pending'}}">
+    <button class="action-btn handle" bindtap="handleOrder">接单处理</button>
+  </view>
+  
+  <view class="action-bar" wx:if="{{orderInfo.status === 'processing'}}">
+    <button class="action-btn" bindtap="showHandleForm">填写处理信息</button>
+    <button class="action-btn complete" bindtap="completeOrder">完成工单</button>
+  </view>
+  
+  <view class="action-bar" wx:if="{{orderInfo.status === 'completed'}}">
+    <button class="action-btn view" bindtap="viewDeviceDetail">查看设备</button>
+  </view>
+</view> 

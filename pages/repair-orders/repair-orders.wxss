@@ -1,0 +1,292 @@
+/* pages/repair-orders/repair-orders.wxss */
+.container {
+  padding: 0;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.tabs {
+  display: flex;
+  background-color: #ffffff;
+  border-bottom: 1rpx solid #e0e0e0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tab {
+  flex: 1;
+  height: 80rpx;
+  line-height: 80rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: #666666;
+  position: relative;
+}
+
+.tab.active {
+  color: #0078D7;
+  font-weight: 500;
+}
+
+.tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 25%;
+  width: 50%;
+  height: 4rpx;
+  background-color: #0078D7;
+}
+
+.filter-bar {
+  display: flex;
+  padding: 20rpx;
+  background-color: #ffffff;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.search-box {
+  flex: 1;
+  display: flex;
+  height: 70rpx;
+  border-radius: 35rpx;
+  background-color: #f5f5f5;
+  padding: 0 20rpx;
+  margin-right: 20rpx;
+}
+
+.search-input {
+  flex: 1;
+  height: 70rpx;
+  font-size: 28rpx;
+}
+
+.search-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 70rpx;
+}
+
+.search-icon {
+  font-size: 36rpx;
+  color: #999999;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  padding: 0 20rpx;
+  font-size: 28rpx;
+  color: #666666;
+}
+
+.filter-icon {
+  font-size: 24rpx;
+  margin-left: 6rpx;
+}
+
+.order-list {
+  padding: 20rpx;
+}
+
+.order-item {
+  background-color: #ffffff;
+  border-radius: 10rpx;
+  margin-bottom: 20rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.order-id {
+  font-size: 28rpx;
+  color: #666666;
+}
+
+.order-status {
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+}
+
+.order-status.pending {
+  background-color: #fff7e6;
+  color: #fa8c16;
+}
+
+.order-status.processing {
+  background-color: #e6f7ff;
+  color: #1890ff;
+}
+
+.order-status.completed {
+  background-color: #f6ffed;
+  color: #52c41a;
+}
+
+.order-content {
+  padding: 20rpx;
+}
+
+.device-info {
+  margin-bottom: 15rpx;
+}
+
+.device-name {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333333;
+  margin-bottom: 6rpx;
+}
+
+.device-id {
+  font-size: 26rpx;
+  color: #999999;
+}
+
+.fault-desc {
+  margin-bottom: 15rpx;
+}
+
+.label {
+  color: #666666;
+  font-size: 28rpx;
+}
+
+.value {
+  color: #333333;
+  font-size: 28rpx;
+}
+
+.time-info {
+  display: flex;
+  font-size: 26rpx;
+  color: #999999;
+}
+
+.report-time {
+  margin-right: 30rpx;
+}
+
+.order-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.urgency-tag {
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+}
+
+.urgency-tag.high {
+  background-color: #ffebeb;
+  color: #ff4d4f;
+}
+
+.urgency-tag.medium {
+  background-color: #fff7e6;
+  color: #fa8c16;
+}
+
+.urgency-tag.low {
+  background-color: #e6f7ff;
+  color: #1890ff;
+}
+
+.btn-group {
+  display: flex;
+}
+
+.action-btn {
+  margin-left: 15rpx;
+  font-size: 26rpx;
+  padding: 0 25rpx;
+  height: 60rpx;
+  line-height: 60rpx;
+  border-radius: 30rpx;
+  min-width: 120rpx;
+}
+
+.action-btn.handle {
+  background-color: #0078D7;
+  color: #ffffff;
+  border: none;
+}
+
+.action-btn.complete {
+  background-color: #52c41a;
+  color: #ffffff;
+  border: none;
+}
+
+.action-btn.view {
+  background-color: #ffffff;
+  color: #0078D7;
+  border: 1rpx solid #0078D7;
+}
+
+.empty-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx 0;
+}
+
+.empty-icon {
+  width: 120rpx;
+  height: 120rpx;
+  margin-bottom: 20rpx;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #999999;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30rpx 0;
+}
+
+.loading-icon {
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 20rpx;
+  border: 4rpx solid #f3f3f3;
+  border-top: 4rpx solid #0078D7;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #666666;
+}
+
+.load-all {
+  text-align: center;
+  padding: 30rpx 0;
+  color: #999999;
+  font-size: 28rpx;
+} 

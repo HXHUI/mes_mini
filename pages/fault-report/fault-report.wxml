@@ -1,0 +1,125 @@
+<!-- pages/fault-report/fault-report.wxml -->
+<view class="container">
+  <view class="form-header">
+    <view class="device-info">
+      <view class="device-name">{{deviceInfo.device_name || '未知设备'}}</view>
+      <view class="device-id">设备编号：{{deviceInfo.device_id  || '未知'}}</view>
+    </view>
+  </view>
+  
+  <view class="form-body">
+    <view class="form-section">
+      <view class="section-title">故障信息</view>
+      
+      <view class="form-item">
+        <view class="form-label required">故障类型</view>
+        <view class="form-control">
+          <picker mode="selector" range="{{faultTypes}}" range-key="text" value="{{faultTypeIndex}}" bindchange="onFaultTypeChange">
+            <view class="picker {{faultTypeIndex === -1 ? 'placeholder' : ''}}">
+              {{faultTypeIndex === -1 ? '请选择故障类型' : faultTypes[faultTypeIndex].text}}
+            </view>
+          </picker>
+        </view>
+      </view>
+      
+      <view class="form-item">
+        <view class="form-label required">紧急程度</view>
+        <view class="form-control">
+          <radio-group class="urgency-group" bindchange="onUrgencyChange">
+            <label class="urgency-item" wx:for="{{urgencyLevels}}" wx:key="value">
+              <radio value="{{item.value}}" checked="{{urgency === item.value}}"/>
+              <text class="urgency-text">{{item.text}}</text>
+            </label>
+          </radio-group>
+        </view>
+      </view>
+      
+      <view class="form-item">
+        <view class="form-label required">故障描述</view>
+        <view class="form-control">
+          <textarea 
+            class="fault-desc" 
+            placeholder="请详细描述故障现象、影响程度等..." 
+            maxlength="200" 
+            bindinput="onDescInput" 
+            value="{{faultDesc}}"
+          ></textarea>
+          <view class="word-count">{{faultDesc.length}}/200</view>
+        </view>
+      </view>
+      
+      <view class="form-item">
+        <view class="form-label">故障图片</view>
+        <view class="form-control">
+          <view class="image-uploader">
+            <view class="image-list">
+              <view 
+                class="image-item" 
+                wx:for="{{faultImages}}" 
+                wx:key="*this"
+                bindtap="previewImage"
+                data-url="{{item}}"
+              >
+                <image src="{{item}}" mode="aspectFill"></image>
+                <view class="delete-btn" catchtap="deleteImage" data-index="{{index}}">×</view>
+              </view>
+              
+              <view class="upload-btn" bindtap="chooseImage" wx:if="{{faultImages.length < 3}}">
+                <text class="upload-icon">+</text>
+                <text class="upload-text">上传图片</text>
+              </view>
+            </view>
+            <view class="upload-tip">最多上传3张图片</view>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <view class="form-section">
+      <view class="section-title">联系信息</view>
+      
+      <view class="form-item">
+        <view class="form-label required">联系人</view>
+        <view class="form-control">
+          <input 
+            class="form-input" 
+            placeholder="请输入联系人姓名" 
+            bindinput="onContactNameInput" 
+            value="{{contactName}}"
+          />
+        </view>
+      </view>
+      
+      <view class="form-item">
+        <view class="form-label required">联系电话</view>
+        <view class="form-control">
+          <input 
+            class="form-input" 
+            type="number" 
+            maxlength="11" 
+            placeholder="请输入联系电话" 
+            bindinput="onContactPhoneInput" 
+            value="{{contactPhone}}"
+          />
+        </view>
+      </view>
+      
+      <view class="form-item">
+        <view class="form-label">设备位置</view>
+        <view class="form-control">
+          <input 
+            class="form-input" 
+            placeholder="请输入设备所在位置" 
+            bindinput="onLocationInput" 
+            value="{{location}}"
+          />
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <view class="form-footer">
+    <button class="cancel-btn" bindtap="cancel">取消</button>
+    <button class="submit-btn" bindtap="submitReport">提交报修</button>
+  </view>
+</view> 

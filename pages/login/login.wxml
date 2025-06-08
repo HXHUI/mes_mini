@@ -1,0 +1,33 @@
+<!-- pages/login/login.wxml -->
+<view class="container">
+  <view class="logo-area">
+    <image class="logo" src="/images/logo.png" mode="aspectFit"></image>
+    <view class="title">MES生产执行管理系统</view>
+  </view>
+  
+  <view class="login-form">
+    <view class="input-group">
+      <view class="input-label">工号</view>
+      <input class="input" type="text" placeholder="请输入工号" bindinput="onEmployeeIdInput" value="{{employeeId}}"/>
+    </view>
+    
+    <view class="input-group">
+      <view class="input-label">密码</view>
+      <input class="input" password placeholder="请输入密码" bindinput="onPasswordInput" value="{{password}}"/>
+    </view>
+    
+    <button class="login-btn" bindtap="handleLogin">登 录</button>
+    
+    <view class="other-login">
+      <button class="wechat-login-btn" bindtap="handleWechatLogin">
+        <image class="wechat-icon" src="/images/icons/wechat.png" mode="aspectFit"></image>
+        微信快捷登录
+      </button>
+    </view>
+  </view>
+  
+  <view class="footer">
+    <text>技术支持：MES系统开发团队</text>
+    <text>v1.0.0</text>
+  </view>
+</view> 

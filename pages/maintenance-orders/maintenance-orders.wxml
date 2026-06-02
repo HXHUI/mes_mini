@@ -3,10 +3,19 @@
   <view class="fixed-header">
     <view class="filter-bar">
       <view class="search-box">
-        <input class="search-input" placeholder="搜索设备名称/工单号" bindinput="onSearchInput" value="{{searchText}}"/>
+        <input class="search-input" placeholder="搜索工单号/设备名称/设备编号" bindinput="onSearchInput" value="{{searchText}}" confirm-type="search" bindconfirm="search"/>
         <view class="search-btn" bindtap="search">
           <text class="search-icon">🔍</text>
         </view>
+      </view>
+      
+      <view class="filter-options">
+        <checkbox-group bindchange="onAssignedToMeChange">
+          <label class="checkbox-label">
+            <checkbox value="assigned_to_me" checked="{{assignedToMe}}" />
+            <text>分配给我</text>
+          </label>
+        </checkbox-group>
       </view>
       
       <view class="filter-btn" bindtap="showFilter">
@@ -19,14 +28,23 @@
       <view class="tab {{tabType === 'all' ? 'active' : ''}}" bindtap="switchTab" data-type="all">
         全部
       </view>
+      <view class="tab {{tabType === 'unassigned' ? 'active' : ''}}" bindtap="switchTab" data-type="unassigned">
+        待分配
+      </view>
       <view class="tab {{tabType === 'pending' ? 'active' : ''}}" bindtap="switchTab" data-type="pending">
-        待处理
+        待执行
       </view>
       <view class="tab {{tabType === 'processing' ? 'active' : ''}}" bindtap="switchTab" data-type="processing">
-        处理中
+        进行中
       </view>
       <view class="tab {{tabType === 'completed' ? 'active' : ''}}" bindtap="switchTab" data-type="completed">
         已完成
+      </view>
+      <view class="tab {{tabType === 'accepted' ? 'active' : ''}}" bindtap="switchTab" data-type="accepted">
+        已验收
+      </view>
+      <view class="tab {{tabType === 'cancelled' ? 'active' : ''}}" bindtap="switchTab" data-type="cancelled">
+        已取消
       </view>
     </view>
   </view>
@@ -43,7 +61,12 @@
         <view class="order-header">
           <view class="order-id">工单号：{{item.id}}</view>
           <view class="order-status {{item.status}}">
-            {{item.status === 'pending' ? '待处理' : (item.status === 'processing' || item.status === 'in_progress' ? '处理中' : '已完成')}}
+            {{item.status === 'unassigned' ? '待分配' :
+              (item.status === 'pending' ? '待执行' : 
+                (item.status === 'in_progress' ? (item.hasStarted ? '进行中' : '待开始') : 
+                  (item.status === 'completed' ? '已完成' : 
+                    (item.status === 'accepted' ? '已验收' :
+                      (item.status === 'cancelled' ? '已取消' : '未知状态')))))}}
           </view>
         </view>
         
@@ -73,11 +96,29 @@
           <view class="time-info">
             <view class="schedule-time">
               <text class="label">计划时间：</text>
-              <text class="value">{{item.scheduled_at || item.created_at || '--'}}</text>
+              <text class="value">{{item.scheduled_start ? (item.scheduled_start + ' ~ ' + (item.scheduled_end || '未设置')) : (item.scheduled_at || item.created_at || '--')}}</text>
             </view>
+            
+            <view class="assign-info">
+              <text class="label">承接/分配时间：</text>
+              <text class="value">{{item.assigned_at || item.updated_at || '--'}}</text>
+            </view>
+            
+            <view class="actual-start" wx:if="{{item.hasStarted}}">
+              <text class="label">实际开始时间：</text>
+              <text class="value">{{item.actual_start || '--'}}</text>
+            </view>
+            
+            <view class="person-info">
             <view class="planner">
               <text class="label">计划人：</text>
               <text class="value">{{item.creator_name || '未知'}}</text>
+              </view>
+              
+              <view class="handler">
+                <text class="label">负责人：</text>
+                <text class="value">{{item.assigned_to_name || item.handler_name || '未分配'}}</text>
+              </view>
             </view>
           </view>
         </view>
@@ -92,11 +133,11 @@
           
           <view class="btn-group">
             <button 
-              class="action-btn {{item.status === 'pending' ? 'handle' : (item.status === 'processing' || item.status === 'in_progress' ? 'complete' : 'view')}}" 
-              catchtap="{{item.status === 'pending' ? 'handleOrder' : (item.status === 'processing' || item.status === 'in_progress' ? 'completeOrder' : 'viewDetail')}}"
+              class="action-btn {{(item.status === 'pending' || item.status === 'unassigned') && !item.assigned_to_name && !item.handler_name ? 'handle' : 'view'}}" 
+              catchtap="{{(item.status === 'pending' || item.status === 'unassigned') && !item.assigned_to_name && !item.handler_name ? 'handleOrder' : 'viewDetail'}}"
               data-id="{{item.id}}"
             >
-              {{item.status === 'pending' ? '接单处理' : (item.status === 'processing' || item.status === 'in_progress' ? '完成工单' : '查看详情')}}
+              {{(item.status === 'pending' || item.status === 'unassigned') && !item.assigned_to_name && !item.handler_name ? '接单处理' : '查看详情'}}
             </button>
           </view>
         </view>

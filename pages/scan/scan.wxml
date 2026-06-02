@@ -1,6 +1,16 @@
 <!-- pages/scan/scan.wxml -->
 <view class="container">
-  <view class="scan-area">
+  <!-- 权限被拒绝时显示提示 -->
+  <view class="permission-denied" wx:if="{{isPermissionDenied}}">
+    <image class="permission-icon" src="/images/icons/scan-code.png" mode="aspectFit"></image>
+    <view class="permission-title">需要相机权限</view>
+    <view class="permission-desc">为了进行设备扫码，需要获取相机使用权限</view>
+    <button class="permission-btn" bindtap="goToSettings">去设置</button>
+    <button class="permission-btn secondary" bindtap="inputCode">手动输入</button>
+  </view>
+  
+  <!-- 正常扫码界面 -->
+  <view class="scan-area" wx:else>
     <camera 
       device-position="back" 
       flash="auto" 

@@ -6,43 +6,43 @@
       <image class="avatar" src="{{userInfo.avatar || '/images/icons/avatar-default.png'}}" mode="aspectFill"></image>
       <view class="user-details">
         <view class="user-name">{{userInfo.name || '张工程师'}}</view>
-        <view class="user-meta">{{userInfo.department || '设备维修部'}} | {{userInfo.position || '设备工程师'}}</view>
-        <view class="user-id">工号：{{userInfo.employeeId || 'EMP20230001'}}</view>
+        <view class="user-id">用户ID：{{userInfo.user_id || 'EMP20230001'}}</view>
       </view>
     </view>
   </view>
   
   <!-- 菜单列表 -->
   <view class="menu-list">
-    <view class="menu-item" bindtap="navigateTo" data-path="{{menus[0].path || '/pages/repair-orders/repair-orders?type=my'}}">
+    <view class="menu-item" bindtap="navigateTo" data-path="/pages/repair-orders/repair-orders?type=my">
       <view class="menu-icon-box">
         <text class="menu-icon repair">修</text>
       </view>
-      <view class="menu-text">我的维修</view>
+      <view class="menu-text">我的维修工单</view>
       <view class="menu-arrow"></view>
     </view>
     
-    <view class="menu-item" bindtap="navigateTo" data-path="{{menus[1].path || '/pages/repair-orders/repair-orders?type=history'}}">
+    <view class="menu-item" bindtap="navigateTo" data-path="/pages/maintenance-orders/maintenance-orders?type=my">
       <view class="menu-icon-box">
-        <text class="menu-icon history">历</text>
+        <text class="menu-icon maintenance">养</text>
       </view>
-      <view class="menu-text">历史记录</view>
+      <view class="menu-text">我的保养工单</view>
       <view class="menu-arrow"></view>
     </view>
     
-    <view class="menu-item" bindtap="navigateTo" data-path="{{menus[2].path || '/pages/favorite-devices/favorite-devices'}}">
-      <view class="menu-icon-box">
-        <text class="menu-icon star">★</text>
-      </view>
-      <view class="menu-text">常用设备</view>
-      <view class="menu-arrow"></view>
-    </view>
-    
-    <view class="menu-item" bindtap="navigateTo" data-path="{{menus[3].path || '/pages/settings/settings'}}">
+    <view class="menu-item" bindtap="navigateTo" data-path="{{menus[2].path || '/pages/settings/settings'}}">
       <view class="menu-icon-box">
         <text class="menu-icon setting">设</text>
       </view>
       <view class="menu-text">系统设置</view>
+      <view class="menu-arrow"></view>
+    </view>
+    
+    <!-- 微信账号管理 -->
+    <view class="menu-item" bindtap="handleWechatAccount">
+      <view class="menu-icon-box">
+        <text class="menu-icon wechat">微</text>
+      </view>
+      <view class="menu-text">{{isWechatBound ? '解绑微信账号' : '绑定微信账号'}}</view>
       <view class="menu-arrow"></view>
     </view>
   </view>

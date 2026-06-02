@@ -85,6 +85,7 @@ export const checkLogin = () => {
       fail: () => {
         // session无效
         wx.removeStorageSync('token')
+        wx.removeStorageSync('refreshToken')
         wx.removeStorageSync('userInfo')
         reject(new Error('登录已过期'))
       }

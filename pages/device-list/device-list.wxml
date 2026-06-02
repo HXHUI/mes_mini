@@ -6,7 +6,7 @@
       <icon type="search" size="16" color="#999999"></icon>
       <input 
         class="search-input" 
-        placeholder="搜索设备名称或编号" 
+        placeholder="搜索设备名称或编号或地址" 
         value="{{keyword}}"
         confirm-type="search"
         bindinput="onKeywordInput"

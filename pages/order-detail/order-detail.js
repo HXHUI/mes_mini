@@ -1,6 +1,7 @@
 // 引入API模块
 import { repairApi } from '../../utils/api/repair.js';
 import { maintenanceApi } from '../../utils/api/maintenance.js';
+import { deviceWorkOrderApi } from '../../utils/api/device-work-order.js';
 import { formatDate } from '../../utils/util.js';
 
 Page({
@@ -8,7 +9,30 @@ Page({
     orderId: '',
     orderInfo: null,
     isLoading: true,
-    orderType: 'REPAIR' // 默认为维修工单
+    orderType: 'REPAIR', // 默认为维修工单
+    showHandleForm: false, // 是否显示处理信息表单
+    handleFormData: { // 处理信息表单数据
+      handle_description: '',
+      solution_description: '',
+      used_materials: ''
+    },
+    // 验收弹窗相关数据
+    showAcceptanceModal: false,
+    submittingAcceptance: false,
+    acceptanceFormData: {
+      is_passed: true,
+      score: null,
+      acceptance_description: ''
+    },
+    scoreOptions: [
+      { value: 90, label: '优秀 (90分)' },
+      { value: 80, label: '良好 (80分)' },
+      { value: 70, label: '合格 (70分)' },
+      { value: 60, label: '基本合格 (60分)' },
+      { value: 50, label: '不合格 (50分)' }
+    ],
+    selectedScoreIndex: -1,
+    selectedScoreLabel: ''
   },
 
   onLoad: function (options) {
@@ -49,11 +73,18 @@ Page({
           // 格式化工单数据
           const orderData = res.data;
           
+          // 获取全局配置
+          const app = getApp();
+          const staticUrl = app.globalData.staticUrl || '';
+          const isDev = app.globalData.isDev || false;
+          
           // 格式化工单状态文本
           const statusMap = {
-            'pending': '待处理',
-            'in_progress': '处理中',
+            'unassigned': '待分配',
+            'pending': '待执行',
+            'in_progress': '执行中',
             'completed': '已完成',
+            'accepted': '已验收',
             'canceled': '已取消'
           };
           
@@ -99,17 +130,47 @@ Page({
             solutionDesc: orderData.solution_description,
             usedMaterials: orderData.used_materials || '无',
             orderType: 'REPAIR', // 设置工单类型为维修工单
-            hasStarted: !!orderData.actual_start // 根据实际开始时间判断是否已开始
+            hasStarted: !!orderData.actual_start, // 根据实际开始时间判断是否已开始
+            // 添加验收信息
+            acceptance: orderData.acceptance || null
           };
           
           // 获取工单图片
           if (orderData.images && orderData.images.length > 0) {
-            formattedOrder.faultImages = orderData.images.map(img => img.url || img.file_path || img);
-      this.setData({
+            console.log('工单包含图片数据:', orderData.images);
+            
+            // 确保图片URL格式正确
+            formattedOrder.faultImages = orderData.images.map(img => {
+              // 获取图片URL
+              let imgUrl = img.url || img.file_path || img;
+              
+              // 确保URL格式正确
+              if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('/')) {
+                imgUrl = '/' + imgUrl;
+              }
+              
+              // 如果URL不包含/mes前缀，添加它
+              if (imgUrl && !imgUrl.startsWith('/mes/') && imgUrl.includes('/uploads/')) {
+                imgUrl = '/mes' + imgUrl;
+              }
+              
+              // 添加静态资源域名前缀
+              if (imgUrl && imgUrl.startsWith('/')) {
+                imgUrl = staticUrl + imgUrl;
+              }
+              
+              console.log(`处理后的图片URL [${isDev ? '开发环境' : '生产环境'}]:`, imgUrl);
+              return imgUrl;
+            });
+            
+            console.log('维修工单详情数据:', formattedOrder);
+            console.log('验收信息:', formattedOrder.acceptance);
+            this.setData({
               orderInfo: formattedOrder,
               isLoading: false
             });
           } else {
+            console.log('工单不包含图片数据，尝试单独获取');
             // 如果API返回中没有包含图片信息，单独获取
             this.loadOrderImages(orderId, formattedOrder);
           }
@@ -136,9 +197,11 @@ Page({
           
           // 格式化工单状态文本
           const statusMap = {
-            'pending': '待处理',
-            'in_progress': '处理中',
+            'unassigned': '待分配',
+            'pending': '待执行',
+            'in_progress': '执行中',
             'completed': '已完成',
+            'accepted': '已验收',
             'canceled': '已取消'
           };
           
@@ -183,12 +246,16 @@ Page({
             usedMaterials: orderData.used_materials || '无',
             orderType: 'MAINTENANCE', // 设置工单类型为保养工单
             tasks: orderData.tasks || [], // 保养任务列表
-            hasStarted: !!orderData.actual_start // 根据实际开始时间判断是否已开始
+            hasStarted: !!orderData.actual_start, // 根据实际开始时间判断是否已开始
+            // 添加验收信息
+            acceptance: orderData.acceptance || null
           };
           
           // 如果API返回中包含任务列表信息，直接使用
           if (orderData.tasks && orderData.tasks.length > 0) {
-      this.setData({
+            console.log('保养工单详情数据:', formattedOrder);
+            console.log('验收信息:', formattedOrder.acceptance);
+            this.setData({
               orderInfo: formattedOrder,
               isLoading: false
             });
@@ -243,20 +310,54 @@ Page({
     repairApi.getWorkOrderImages(orderId)
       .then(res => {
         if (res && res.code === 200 && res.data) {
-          const images = res.data.map(img => img.url || img.file_path || img);
+          console.log('原始图片数据:', res.data);
           
+          // 获取全局配置
+          const app = getApp();
+          const staticUrl = app.globalData.staticUrl || '';
+          const isDev = app.globalData.isDev || false;
+          
+          // 处理图片URL
+          const imageUrls = res.data.map(img => {
+            // 获取图片URL
+            let imgUrl = img.url || img.file_path || img;
+            
+            // 确保URL格式正确
+            if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('/')) {
+              imgUrl = '/' + imgUrl;
+            }
+            
+            // 如果URL不包含/mes前缀，添加它
+            if (imgUrl && !imgUrl.startsWith('/mes/') && imgUrl.includes('/uploads/')) {
+              imgUrl = '/mes' + imgUrl;
+            }
+            
+            // 添加静态资源域名前缀
+            if (imgUrl && imgUrl.startsWith('/')) {
+              imgUrl = staticUrl + imgUrl;
+            }
+            
+            console.log(`处理后的图片URL [${isDev ? '开发环境' : '生产环境'}]:`, imgUrl);
+            return imgUrl;
+          });
+          
+          // 设置图片URL到工单数据中
+          orderData.faultImages = imageUrls;
+          
+          // 更新页面数据
           this.setData({
-            'orderInfo.faultImages': images
+            orderInfo: orderData,
+            isLoading: false
+          });
+        } else {
+          this.setData({
+            orderInfo: orderData,
+            isLoading: false
           });
         }
-        
-        this.setData({
-          orderInfo: orderData,
-          isLoading: false
-        });
       })
       .catch(err => {
-        console.error('获取工单图片失败', err);
+        console.error('获取工单图片失败:', err);
         // 图片获取失败不影响整体功能，继续设置工单数据
         this.setData({
           orderInfo: orderData,
@@ -285,17 +386,38 @@ Page({
     });
   },
 
+  // 修改图片预览方法，适应safe-image组件
   previewImage: function (e) {
-    const url = e.currentTarget.dataset.url;
-    if (this.data.orderInfo.faultImages && this.data.orderInfo.faultImages.length > 0) {
+    const src = e.currentTarget.dataset.url || e.detail.src;
+    if (!src) return;
+    
+    // 收集所有图片的本地路径用于预览
+    const localImages = this.data.orderInfo.faultImages.filter(img => img);
+    
     wx.previewImage({
-      current: url,
-      urls: this.data.orderInfo.faultImages
+      current: src,
+      urls: localImages
     });
-    }
+  },
+  
+  // 处理图片加载错误
+  handleImageError: function(e) {
+    console.error('图片加载失败:', e.detail);
+    const index = e.currentTarget.dataset.index;
+    
+    // 获取失败的图片URL
+    const failedUrl = this.data.orderInfo.faultImages[index];
+    console.error('加载失败的图片URL:', failedUrl);
+    
+    wx.showToast({
+      title: '部分图片加载失败',
+      icon: 'none'
+    });
   },
 
-  handleOrder: function () {
+  // 接单处理
+  handleOrder: function() {
+    // 获取当前登录用户信息
     const userInfo = wx.getStorageSync('userInfo');
     
     if (!userInfo || !userInfo.id) {
@@ -308,157 +430,172 @@ Page({
     
     wx.showModal({
       title: '接单处理',
-      content: `确定要接手工单 ${this.data.orderInfo.id} 吗？`,
+      content: '确定要接手该工单吗？',
       success: (res) => {
         if (res.confirm) {
           wx.showLoading({
             title: '处理中...'
           });
           
-          // 根据工单类型调用不同的接单API
-          if (this.data.orderType === 'MAINTENANCE') {
-            // 保养工单接单
-            maintenanceApi.acceptMaintenanceOrder(this.data.orderId, userInfo.id)
-              .then(res => {
-                wx.hideLoading();
-                
-                if (res && res.code === 200) {
-                  wx.showToast({
-                    title: '接单成功',
-                    icon: 'success'
-                  });
-                  
-                  // 重新加载工单详情
-                  this.loadOrderDetail(this.data.orderId, this.data.orderType);
-                } else {
-                  const errMsg = res?.message || '接单失败';
-                  wx.showToast({
-                    title: errMsg,
-                    icon: 'none'
-                  });
+          // 根据工单类型调用不同的API
+          const apiPromise = this.data.orderInfo.orderType === 'MAINTENANCE' 
+            ? maintenanceApi.acceptMaintenanceOrder(this.data.orderId, userInfo.id)
+            : repairApi.acceptWorkOrder(this.data.orderId, userInfo.id);
+          
+          apiPromise.then(res => {
+            wx.hideLoading();
+            
+            if (res && res.code === 200) {
+              wx.showToast({
+                title: '接单成功',
+                icon: 'success',
+                duration: 1500,
+                success: () => {
+                  // 延迟一下再刷新，让用户看到提示
+                  setTimeout(() => {
+                    // 刷新当前页面
+                    this.loadOrderDetail(this.data.orderId, this.data.orderType);
+                  }, 1500);
                 }
-              })
-              .catch(err => {
-                wx.hideLoading();
-                console.error('接单失败', err);
-                
-                wx.showToast({
-                  title: '接单失败，请检查网络连接',
-                  icon: 'none'
-                });
               });
-          } else {
-            // 维修工单接单
-            repairApi.acceptWorkOrder(this.data.orderId, userInfo.id)
-              .then(res => {
-                wx.hideLoading();
-                
-                if (res && res.code === 200) {
-          wx.showToast({
-            title: '接单成功',
-            icon: 'success'
+            } else {
+              wx.showToast({
+                title: res?.message || '接单失败，请重试',
+                icon: 'none'
+              });
+            }
+          })
+          .catch(err => {
+            wx.hideLoading();
+            console.error('接单失败：', err);
+            
+            wx.showToast({
+              title: '接单失败，请重试',
+              icon: 'none'
+            });
           });
-                  
-                  // 重新加载工单详情
-                  this.loadOrderDetail(this.data.orderId, this.data.orderType);
-                } else {
-                  const errMsg = res?.message || '接单失败';
-                  wx.showToast({
-                    title: errMsg,
-                    icon: 'none'
-                  });
-                }
-              })
-              .catch(err => {
-                wx.hideLoading();
-                console.error('接单失败', err);
-                
-                wx.showToast({
-                  title: '接单失败，请检查网络连接',
-                  icon: 'none'
-                });
-              });
-          }
         }
       }
     });
   },
   
-  showHandleForm: function () {
-    wx.navigateTo({
-      url: `/pages/handle-form/handle-form?id=${this.data.orderId}`
+  showHandleForm: function() {
+    // 如果已有处理信息，则预填充表单
+    const orderInfo = this.data.orderInfo;
+    this.setData({
+      showHandleForm: true,
+      handleFormData: {
+        handle_description: orderInfo.handleDesc || '',
+        solution_description: orderInfo.solutionDesc || '',
+        used_materials: orderInfo.usedMaterials || ''
+      }
     });
   },
   
-  completeOrder: function () {
-    // 针对不同类型的工单采用不同的完成方式
-    if (this.data.orderType === 'MAINTENANCE') {
-      // 保养工单走原有流程
-      wx.showModal({
-        title: '完成工单',
-        content: `确定要完成工单 ${this.data.orderInfo.id} 吗？`,
-        success: (res) => {
-          if (res.confirm) {
-            wx.navigateTo({
-              url: `/pages/complete-form/complete-form?id=${this.data.orderId}`
-            });
-          }
+  hideHandleForm: function() {
+    this.setData({
+      showHandleForm: false
+    });
+  },
+
+  // 处理说明输入事件
+  onHandleDescInput: function(e) {
+    this.setData({
+      'handleFormData.handle_description': e.detail.value
+    });
+  },
+
+  // 解决方案输入事件
+  onSolutionDescInput: function(e) {
+    this.setData({
+      'handleFormData.solution_description': e.detail.value
+    });
+  },
+
+  // 使用材料输入事件
+  onUsedMaterialsInput: function(e) {
+    this.setData({
+      'handleFormData.used_materials': e.detail.value
+    });
+  },
+
+  // 完成工单
+  completeOrder: function() {
+    wx.showModal({
+      title: '完成工单',
+      content: '确定已完成处理此工单？',
+      success: (res) => {
+        if (res.confirm) {
+          // 打开处理信息填写表单
+          this.completeEntireOrder();
         }
+      }
+    });
+  },
+  
+  // 提交处理表单
+  submitHandleForm: function() {
+    // 验证表单数据
+    const formData = this.data.handleFormData;
+    if (!formData.handle_description) {
+      wx.showToast({
+        title: '请填写处理说明',
+        icon: 'none'
       });
-    } else {
-      // 维修工单直接完成
-      wx.showModal({
-        title: '处理完成',
-        content: `确定已完成维修工单处理吗？`,
-        success: (res) => {
-          if (res.confirm) {
-            wx.showLoading({
-              title: '正在完成...'
-            });
-            
-            // 准备提交数据
-            const completionData = {
-              actual_end: formatDate(new Date())
-            };
-            
-            // 调用完成工单API
-            repairApi.completeWorkOrder(this.data.orderId, completionData)
-              .then(res => {
-                wx.hideLoading();
-                
-                if (res && res.code === 200) {
-                  wx.showToast({
-                    title: '工单已完成',
-                    icon: 'success',
-                    duration: 1500
-                  });
-                  
-                  // 更新本地状态
-                  this.setData({
-                    'orderInfo.status': 'completed',
-                    'orderInfo.statusText': '已完成',
-                    'orderInfo.actualEnd': formatDate(new Date())
-                  });
-                } else {
-                  wx.showToast({
-                    title: res?.message || '完成工单失败',
-                    icon: 'none'
-                  });
-                }
-              })
-              .catch(err => {
-                wx.hideLoading();
-                console.error('完成工单失败', err);
-                
-                wx.showToast({
-                  title: '完成工单失败，请重试',
-                  icon: 'none'
-                });
-              });
-          }
-        }
-      });
+      return;
     }
+    
+    wx.showLoading({
+      title: '提交中...'
+    });
+    
+    // 构建完成数据
+    const completionData = {
+      actual_end: formatDate(new Date()),
+      handle_description: formData.handle_description,
+      solution_description: formData.solution_description,
+      used_materials: formData.used_materials
+    };
+    
+    // 根据工单类型调用不同的API
+    const apiPromise = this.data.orderInfo.orderType === 'MAINTENANCE' 
+      ? maintenanceApi.completeMaintenanceOrder(this.data.orderId, completionData)
+      : repairApi.completeWorkOrder(this.data.orderId, completionData);
+    
+    apiPromise.then(res => {
+      wx.hideLoading();
+      this.setData({ showHandleForm: false });
+      
+      if (res && res.code === 200) {
+        wx.showToast({
+          title: '工单已完成',
+          icon: 'success',
+          duration: 1500,
+          success: () => {
+            // 延迟一下再刷新，让用户看到提示
+            setTimeout(() => {
+              // 刷新当前页面
+              this.loadOrderDetail(this.data.orderId, this.data.orderType);
+            }, 1500);
+          }
+        });
+      } else {
+        wx.showToast({
+          title: res?.message || '提交失败',
+          icon: 'none'
+        });
+      }
+    })
+    .catch(err => {
+      wx.hideLoading();
+      this.setData({ showHandleForm: false });
+      console.error('完成工单失败', err);
+      
+      wx.showToast({
+        title: '提交失败，请重试',
+        icon: 'none'
+      });
+    });
   },
   
   viewDeviceDetail: function () {
@@ -498,26 +635,6 @@ Page({
     });
   },
   
-  // 开始任务方法保留但简化，因为UI中已移除开始按钮
-  startTask: function(e) {
-    const taskId = e.currentTarget.dataset.id;
-    
-    // 直接更新本地状态为进行中
-    const tasks = this.data.orderInfo.tasks.map(task => {
-      if (task.id === taskId) {
-        return {
-          ...task,
-          status: 'in_progress',
-          started_at: new Date().toISOString()
-        };
-      }
-      return task;
-    });
-    
-    this.setData({
-      'orderInfo.tasks': tasks
-    });
-  },
 
   // 完成保养任务
   completeTask: function(e) {
@@ -617,50 +734,17 @@ Page({
   
   // 添加新方法：直接完成整个工单
   completeEntireOrder: function() {
-    wx.showLoading({
-      title: '正在完成工单...'
+    // 先弹出处理信息填写表单
+    // 如果已有处理信息，则预填充表单
+    const orderInfo = this.data.orderInfo;
+    this.setData({
+      showHandleForm: true,
+      handleFormData: {
+        handle_description: orderInfo.handleDesc || '',
+        solution_description: orderInfo.solutionDesc || '',
+        used_materials: orderInfo.usedMaterials || ''
+      }
     });
-    
-    // 准备提交数据
-    const completionData = {
-      actual_end: formatDate(new Date()), // 使用formatDate函数格式化当前时间
-      status: 'completed' // 确保状态被设置为已完成
-    };
-    
-    // 调用完成工单API
-    maintenanceApi.completeMaintenanceOrder(this.data.orderId, completionData)
-      .then(res => {
-        wx.hideLoading();
-        
-        if (res && res.code === 200) {
-          wx.showToast({
-            title: '工单已完成',
-            icon: 'success',
-            duration: 1500
-          });
-          
-          // 延迟后跳转到保养工单列表页
-          setTimeout(() => {
-            wx.redirectTo({
-              url: '/pages/maintenance-orders/maintenance-orders'
-            });
-          }, 1500);
-        } else {
-          wx.showToast({
-            title: res?.message || '完成工单失败',
-            icon: 'none'
-          });
-        }
-      })
-      .catch(err => {
-        wx.hideLoading();
-        console.error('完成工单失败', err);
-        
-        wx.showToast({
-          title: '完成工单失败，请重试',
-          icon: 'none'
-        });
-      });
   },
   
   // 跳过保养任务
@@ -750,80 +834,39 @@ Page({
     });
   },
   
-  // 添加开始工单方法
-  startOrder: function() {
-    wx.showModal({
-      title: '开始任务',
-      content: '确定要开始执行保养任务吗？',
-      success: (res) => {
-        if (res.confirm) {
-          wx.showLoading({
-            title: '处理中...'
-          });
-          
-          // 调用API开始工单
-          maintenanceApi.startMaintenanceOrder(this.data.orderId)
-            .then(res => {
-              wx.hideLoading();
-              
-              if (res && res.code === 200) {
-                // 更新本地状态
-                this.setData({
-                  'orderInfo.hasStarted': true,
-                  'orderInfo.actualStart': formatDate(new Date())
-                });
-                
-                wx.showToast({
-                  title: '任务已开始',
-                  icon: 'success'
-                });
-              } else {
-                wx.showToast({
-                  title: res?.message || '开始任务失败',
-                  icon: 'none'
-                });
-              }
-            })
-            .catch(err => {
-              wx.hideLoading();
-              console.error('开始任务失败', err);
-              
-              wx.showToast({
-                title: '开始任务失败，请重试',
-                icon: 'none'
-              });
-            });
-        }
-      }
-    });
-  },
-
   // 添加开始处理维修工单方法
   startWorkOrder: function() {
     wx.showModal({
       title: '开始处理',
-      content: '确定要开始处理此维修工单吗？',
+      content: '确定要开始处理此工单吗？',
       success: (res) => {
         if (res.confirm) {
           wx.showLoading({
             title: '处理中...'
           });
           
-          // 调用API开始工单
-          repairApi.startWorkOrder(this.data.orderId,formatDate(new Date()))
-            .then(res => {
+          const currentTime = formatDate(new Date());
+          
+          // 根据工单类型调用不同的API
+          const apiPromise = this.data.orderInfo.orderType === 'MAINTENANCE' 
+            ? maintenanceApi.startMaintenanceOrder(this.data.orderId,currentTime)
+            : repairApi.startWorkOrder(this.data.orderId, currentTime);
+          
+          apiPromise.then(res => {
               wx.hideLoading();
               
               if (res && res.code === 200) {
-                // 更新本地状态
-                this.setData({
-                  'orderInfo.hasStarted': true,
-                  'orderInfo.actualStart': formatDate(new Date())
-                });
-                
                 wx.showToast({
                   title: '已开始处理',
-                  icon: 'success'
+                  icon: 'success',
+                  duration: 1500,
+                  success: () => {
+                    // 延迟一下再刷新，让用户看到提示
+                    setTimeout(() => {
+                      // 刷新当前页面
+                      this.loadOrderDetail(this.data.orderId, this.data.orderType);
+                    }, 1500);
+                  }
                 });
               } else {
                 wx.showToast({
@@ -845,4 +888,164 @@ Page({
       }
     });
   },
+
+  // 显示验收弹窗
+  showAcceptanceModal: function() {
+    // 重置验收表单数据
+    this.setData({
+      showAcceptanceModal: true,
+      acceptanceFormData: {
+        is_passed: true,
+        score: null,
+        acceptance_description: ''
+      },
+      selectedScoreIndex: -1,
+      selectedScoreLabel: ''
+    })
+  },
+
+  // 隐藏验收弹窗
+  hideAcceptanceModal: function() {
+    this.setData({
+      showAcceptanceModal: false
+    })
+  },
+
+  // 验收结果变化
+  onAcceptanceResultChange: function(e) {
+    const isPassed = e.detail.value === 'true'
+    this.setData({
+      'acceptanceFormData.is_passed': isPassed,
+      'acceptanceFormData.score': isPassed ? this.data.acceptanceFormData.score : null,
+      selectedScoreIndex: isPassed ? this.data.selectedScoreIndex : -1,
+      selectedScoreLabel: isPassed ? this.data.selectedScoreLabel : ''
+    })
+  },
+
+  // 评分选择
+  onScoreChange: function(e) {
+    const index = e.detail.value
+    const selectedOption = this.data.scoreOptions[index]
+    
+    this.setData({
+      'acceptanceFormData.score': selectedOption.value,
+      selectedScoreIndex: index,
+      selectedScoreLabel: selectedOption.label
+    })
+  },
+
+  // 验收说明输入
+  onAcceptanceDescriptionInput: function(e) {
+    this.setData({
+      'acceptanceFormData.acceptance_description': e.detail.value
+    })
+  },
+
+  // 提交验收
+  submitAcceptance: function() {
+    const { acceptanceFormData } = this.data
+    
+    // 验证表单
+    if (typeof acceptanceFormData.is_passed !== 'boolean') {
+      wx.showToast({
+        title: '请选择验收结果',
+        icon: 'none'
+      })
+      return
+    }
+
+    if (acceptanceFormData.is_passed && !acceptanceFormData.score) {
+      wx.showToast({
+        title: '通过验收时必须选择评分',
+        icon: 'none'
+      })
+      return
+    }
+
+    if (!acceptanceFormData.acceptance_description.trim()) {
+      wx.showToast({
+        title: '请输入验收说明',
+        icon: 'none'
+      })
+      return
+    }
+
+    // 显示确认对话框
+    wx.showModal({
+      title: '确认验收',
+      content: `确定要${acceptanceFormData.is_passed ? '通过' : '不通过'}这个工单的验收吗？`,
+      success: (res) => {
+        if (res.confirm) {
+          this.doSubmitAcceptance()
+        }
+      }
+    })
+  },
+
+  // 执行验收提交
+  doSubmitAcceptance: function() {
+    console.log('开始提交验收，数据:', this.data.acceptanceFormData)
+    this.setData({
+      submittingAcceptance: true
+    })
+
+    deviceWorkOrderApi.acceptance(this.data.orderId, this.data.acceptanceFormData)
+      .then(res => {
+        this.setData({
+          submittingAcceptance: false
+        })
+        console.log('验收提交响应:', res)
+
+        if (res && res.code === 200) {
+          wx.showToast({
+            title: '验收成功',
+            icon: 'success'
+          })
+          
+          // 隐藏弹窗
+          this.hideAcceptanceModal()
+          
+          // 刷新工单信息
+          this.loadOrderDetail(this.data.orderId, this.data.orderType)
+        } else {
+          console.error('验收提交失败:', res)
+          wx.showToast({
+            title: res?.message || '验收失败',
+            icon: 'error'
+          })
+        }
+      })
+      .catch(error => {
+        this.setData({
+          submittingAcceptance: false
+        })
+        console.error('验收失败:', error)
+        wx.showToast({
+          title: '网络错误，请重试',
+          icon: 'error'
+        })
+      })
+  },
+
+  // 加载验收信息
+  loadAcceptanceInfo: function(orderId) {
+    deviceWorkOrderApi.getAcceptance(orderId)
+      .then(res => {
+        if (res && res.code === 200 && res.data) {
+          // 更新工单信息中的验收数据
+          this.setData({
+            'orderInfo.acceptance': res.data
+          })
+        }
+      })
+      .catch(error => {
+        console.error('加载验收信息失败:', error)
+      })
+  },
+
+  // 在页面显示时刷新工单信息（如果需要）
+  onShow: function() {
+    // 如果需要刷新工单信息，可以在这里添加逻辑
+    // 目前工单详情API已经包含了验收信息，无需单独加载
+  }
 }) 

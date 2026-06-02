@@ -74,48 +74,6 @@
         </view>
       </view>
     </view>
-    
-    <view class="form-section">
-      <view class="section-title">联系信息</view>
-      
-      <view class="form-item">
-        <view class="form-label required">联系人</view>
-        <view class="form-control">
-          <input 
-            class="form-input" 
-            placeholder="请输入联系人姓名" 
-            bindinput="onContactNameInput" 
-            value="{{contactName}}"
-          />
-        </view>
-      </view>
-      
-      <view class="form-item">
-        <view class="form-label required">联系电话</view>
-        <view class="form-control">
-          <input 
-            class="form-input" 
-            type="number" 
-            maxlength="11" 
-            placeholder="请输入联系电话" 
-            bindinput="onContactPhoneInput" 
-            value="{{contactPhone}}"
-          />
-        </view>
-      </view>
-      
-      <view class="form-item">
-        <view class="form-label">设备位置</view>
-        <view class="form-control">
-          <input 
-            class="form-input" 
-            placeholder="请输入设备所在位置" 
-            bindinput="onLocationInput" 
-            value="{{location}}"
-          />
-        </view>
-      </view>
-    </view>
   </view>
   
   <view class="form-footer">

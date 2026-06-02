@@ -7,22 +7,34 @@
   <block wx:else>
     <view class="order-header">
       <view class="order-id">工单号：{{orderInfo.id}}</view>
-      <view class="status-tag {{orderInfo.status}}">{{orderInfo.statusText || (orderInfo.status === 'pending' ? '待处理' : (orderInfo.status === 'in_progress' ? '处理中' : '已完成'))}}</view>
+      <view class="status-tag {{orderInfo.status}}">{{orderInfo.statusText}}</view>
     </view>
+  
+  <view class="order-section">
+    <view class="section-title">基本信息</view>
+    <view class="info-item">
+      <text class="label">工单编号：</text>
+      <text class="value">{{orderInfo.id || '--'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">设备名称：</text>
+      <text class="value">{{orderInfo.deviceName || '--'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">设备位置：</text>
+      <text class="value">{{orderInfo.deviceLocation || '--'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">负责人：</text>
+      <text class="value">{{orderInfo.handler || '未分配'}}</text>
+    </view>
+  </view>
   
   <view class="order-section">
     <view class="section-title">设备信息</view>
     <view class="info-item">
-      <text class="label">设备名称：</text>
-      <text class="value">{{orderInfo.deviceName}}</text>
-    </view>
-    <view class="info-item">
       <text class="label">设备编号：</text>
       <text class="value">{{orderInfo.deviceId}}</text>
-    </view>
-    <view class="info-item">
-      <text class="label">设备位置：</text>
-        <text class="value">{{orderInfo.deviceLocation || '未知位置'}}</text>
     </view>
   </view>
   
@@ -87,14 +99,6 @@
     <view class="order-section" wx:if="{{orderInfo.orderType === 'MAINTENANCE' && orderInfo.tasks && orderInfo.tasks.length > 0}}">
       <view class="section-title-row">
         <view class="section-title">任务清单</view>
-        <!-- 添加开始任务按钮，仅在处理中且未开始状态显示 -->
-        <button 
-          class="start-task-btn {{orderInfo.hasStarted ? 'disabled' : ''}}" 
-          bindtap="startOrder" 
-          disabled="{{orderInfo.hasStarted}}"
-          wx:if="{{orderInfo.status === 'in_progress'}}">
-            {{orderInfo.hasStarted ? '已开始' : '开始任务'}}
-        </button>
       </view>
       <view class="task-list">
         <view class="task-item" wx:for="{{orderInfo.tasks}}" wx:key="id">
@@ -109,15 +113,21 @@
           </view>
           
           <view class="task-info-container">
+            <!-- 任务描述 -->
+            <view class="task-info-row" wx:if="{{item.description}}">
+              <text class="info-label">描述：</text>
+              <text class="description-value">{{item.description}}</text>
+            </view>
+            
             <view class="task-info-row">
               <text class="info-label">标准工时：</text>
-              <text class="time-value">{{item.standard_time || 0}}小时</text>
+              <text class="time-value">{{item.standard_time || 0}}分钟</text>
             </view>
             
             <!-- 已完成状态显示实际耗时 -->
             <view class="task-info-row" wx:if="{{orderInfo.status === 'completed' || item.status === 'completed'}}">
               <text class="info-label">实际耗时：</text>
-              <text class="time-value">{{item.actual_time || 0}}小时</text>
+              <text class="time-value">{{item.actual_time || 0}}分钟</text>
             </view>
             
             <!-- 已跳过状态显示跳过原因 -->
@@ -127,13 +137,13 @@
             </view>
           </view>
           
-          <!-- 进行中状态且工单已开始时才显示实际耗时输入 -->
-          <view class="task-actual-time" wx:if="{{orderInfo.status === 'in_progress' && orderInfo.hasStarted && (item.status === 'pending' || item.status === 'in_progress')}}">
-            <input class="time-input" type="digit" placeholder="输入实际耗时（小时）" bindinput="onActualTimeInput" data-id="{{item.id}}" value="{{item.inputActualTime}}"/>
+          <!-- 进行中状态且任务未完成或未跳过时才显示实际耗时输入 -->
+          <view class="task-actual-time" wx:if="{{orderInfo.status === 'in_progress' && item.status !== 'completed' && item.status !== 'skipped'}}">
+            <input class="time-input" type="digit" placeholder="输入实际耗时（分钟）" bindinput="onActualTimeInput" data-id="{{item.id}}" value="{{item.inputActualTime}}"/>
           </view>
           
-          <!-- 处理中状态、工单已开始且任务未完成或未跳过时显示操作按钮 -->
-          <view class="task-action" wx:if="{{orderInfo.status === 'in_progress' && orderInfo.hasStarted && (item.status === 'pending' || item.status === 'in_progress')}}">
+          <!-- 处理中状态、且任务未完成或未跳过时显示操作按钮 -->
+          <view class="task-action" wx:if="{{orderInfo.status === 'in_progress' && item.status !== 'completed' && item.status !== 'skipped'}}">
             <!-- 只有填写了实际耗时并确认后才能完成任务 -->
             <button class="task-btn {{!item.confirmed_actual_time ? 'disabled' : ''}}" bindtap="completeTask" data-id="{{item.id}}" disabled="{{!item.confirmed_actual_time}}">完成</button>
             <button class="task-btn skip" bindtap="skipTask" data-id="{{item.id}}">跳过</button>
@@ -163,19 +173,25 @@
     <view class="order-section" wx:if="{{orderInfo.orderType !== 'MAINTENANCE' && orderInfo.faultImages && orderInfo.faultImages.length > 0}}">
     <view class="section-title">故障图片</view>
     <view class="image-list">
-      <image 
+      <safe-image 
         wx:for="{{orderInfo.faultImages}}" 
         wx:key="*this" 
+        wx:for-index="index"
         src="{{item}}" 
         mode="aspectFill" 
         class="fault-image" 
         bindtap="previewImage" 
         data-url="{{item}}"
-      ></image>
+        data-index="{{index}}"
+        binderror="handleImageError"
+        width="160rpx"
+        height="160rpx"
+        radius="8rpx"
+      />
     </view>
   </view>
   
-  <view class="order-section" wx:if="{{orderInfo.status !== 'pending'}}">
+  <view class="order-section" wx:if="{{orderInfo.status !== 'pending' && orderInfo.status !== 'unassigned'}}">
     <view class="section-title">处理信息</view>
     <view class="info-item">
       <text class="label">处理人：</text>
@@ -195,46 +211,183 @@
       <text class="label">实际结束：</text>
       <text class="value">{{orderInfo.actualEnd || '--'}}</text>
     </view>
+    <!-- 添加完成时间显示 -->
+    <view class="info-item" wx:if="{{orderInfo.status === 'completed' && orderInfo.completeTime}}">
+      <text class="label">完成时间：</text>
+      <text class="value">{{orderInfo.completeTime || '--'}}</text>
+    </view>
     <view class="info-item description" wx:if="{{orderInfo.handleDesc}}">
       <text class="label">处理说明：</text>
       <text class="value">{{orderInfo.handleDesc}}</text>
     </view>
-  </view>
-  
-  <view class="order-section" wx:if="{{orderInfo.status === 'completed'}}">
-    <view class="section-title">完成信息</view>
-    <view class="info-item">
-      <text class="label">完成时间：</text>
-      <text class="value">{{orderInfo.completeTime || '--'}}</text>
-    </view>
+    <!-- 移动解决方案到处理信息卡片 -->
     <view class="info-item description" wx:if="{{orderInfo.solutionDesc}}">
       <text class="label">解决方案：</text>
       <text class="value">{{orderInfo.solutionDesc}}</text>
     </view>
-    <view class="info-item">
+    <!-- 移动使用材料到处理信息卡片 -->
+    <view class="info-item" wx:if="{{orderInfo.usedMaterials}}">
       <text class="label">使用材料：</text>
       <text class="value">{{orderInfo.usedMaterials || '无'}}</text>
     </view>
   </view>
   
-  <view class="action-bar" wx:if="{{orderInfo.status === 'pending'}}">
+  <!-- 待分配或待执行状态且没有负责人时显示接单按钮 -->
+  <view class="action-bar" wx:if="{{orderInfo.status === 'unassigned'}}">
     <button class="action-btn handle" bindtap="handleOrder">接单处理</button>
+    <button class="action-btn view" bindtap="viewDeviceDetail">查看设备</button>
   </view>
   
-  <!-- 维修工单处理中状态的操作按钮 -->
-  <view class="action-bar" wx:if="{{orderInfo.status === 'processing' || orderInfo.status === 'in_progress'}}">
-    <!-- 未开始处理时显示开始处理按钮 -->
-    <button class="action-btn handle" bindtap="startWorkOrder" wx:if="{{!orderInfo.hasStarted && orderInfo.orderType !== 'MAINTENANCE'}}">开始处理</button>
-    
-    <!-- 已开始处理显示填写处理信息和完成处理按钮 -->
-    <block wx:if="{{orderInfo.hasStarted || orderInfo.orderType === 'MAINTENANCE'}}">
-      <button class="action-btn" bindtap="showHandleForm">填写处理信息</button>
-      <button class="action-btn complete" bindtap="completeOrder">{{orderInfo.orderType === 'MAINTENANCE' ? '完成工单' : '处理完成'}}</button>
-    </block>
+  <!-- 处理中状态的操作按钮 -->
+  <view class="action-bar" wx:if="{{orderInfo.status === 'pending'}}">
+    <!-- 未开始处理时显示开始处理按钮，适用于所有工单类型 -->
+    <button class="action-btn handle" bindtap="startWorkOrder" wx:if="{{!orderInfo.hasStarted}}">开始处理</button>
+    <button class="action-btn view" bindtap="viewDeviceDetail">查看设备</button>
+  </view>
+
+  <view class="action-bar" wx:if="{{orderInfo.status === 'in_progress'}}">
+    <button class="action-btn complete" bindtap="completeOrder">处理完成</button>
+    <button class="action-btn view" bindtap="viewDeviceDetail">查看设备</button>
   </view>
   
+  <!-- 验收信息区域 -->
+  <view class="order-section" wx:if="{{orderInfo.acceptance}}">
+    <view class="section-title">验收信息</view>
+    <view class="info-item">
+      <text class="label">验收结果：</text>
+      <view class="acceptance-result {{orderInfo.acceptance.is_passed ? 'passed' : 'failed'}}">
+        {{orderInfo.acceptance.is_passed ? '通过' : '不通过'}}
+      </view>
+    </view>
+    <view class="info-item" wx:if="{{orderInfo.acceptance.is_passed}}">
+      <text class="label">评分分值：</text>
+      <text class="value">{{orderInfo.acceptance.score}}分</text>
+    </view>
+    <view class="info-item">
+      <text class="label">验收说明：</text>
+      <text class="value">{{orderInfo.acceptance.acceptance_description || '无说明'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">验收人员：</text>
+      <text class="value">{{orderInfo.acceptance.acceptor_name || '未知'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">验收时间：</text>
+      <text class="value">{{orderInfo.acceptance.acceptance_time || '未知'}}</text>
+    </view>
+  </view>
+
   <view class="action-bar" wx:if="{{orderInfo.status === 'completed'}}">
+    <button class="action-btn view" bindtap="viewDeviceDetail">查看设备</button>
+    <!-- 如果还没有验收，显示验收按钮 -->
+                <button 
+              wx:if="{{orderInfo.status === 'completed' && !orderInfo.acceptance}}"
+              class="action-btn acceptance" 
+              bindtap="showAcceptanceModal"
+            >
+              验收
+            </button>
+  </view>
+
+  <!-- 已验收状态的操作按钮 -->
+  <view class="action-bar" wx:if="{{orderInfo.status === 'accepted'}}">
+    <button class="action-btn view" bindtap="viewDeviceDetail">查看设备</button>
+  </view>
+
+  <!-- 已取消状态的操作按钮 -->
+  <view class="action-bar" wx:if="{{orderInfo.status === 'cancelled' || orderInfo.status === 'canceled'}}">
     <button class="action-btn view" bindtap="viewDeviceDetail">查看设备</button>
   </view>
   </block>
+  
+  <!-- 处理信息填写弹窗 -->
+  <view class="modal" wx:if="{{showHandleForm}}">
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">填写处理信息</text>
+        <text class="modal-close" bindtap="hideHandleForm">×</text>
+      </view>
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="form-label">处理说明：</text>
+          <textarea class="form-textarea" placeholder="请输入处理说明" value="{{handleFormData.handle_description}}" bindinput="onHandleDescInput"></textarea>
+        </view>
+        <view class="form-item">
+          <text class="form-label">解决方案：</text>
+          <textarea class="form-textarea" placeholder="请输入解决方案" value="{{handleFormData.solution_description}}" bindinput="onSolutionDescInput"></textarea>
+        </view>
+        <view class="form-item">
+          <text class="form-label">使用材料：</text>
+          <textarea class="form-textarea" placeholder="请输入使用的材料" value="{{handleFormData.used_materials}}" bindinput="onUsedMaterialsInput"></textarea>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="hideHandleForm">取消</button>
+        <button class="modal-btn confirm" bindtap="submitHandleForm">确认</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 验收弹窗 -->
+  <view class="modal" wx:if="{{showAcceptanceModal}}">
+    <view class="modal-content acceptance-modal">
+      <view class="modal-header">
+        <text class="modal-title">工单验收</text>
+        <text class="modal-close" bindtap="hideAcceptanceModal">×</text>
+      </view>
+      <view class="modal-body">
+        <!-- 验收结果 -->
+        <view class="form-item">
+          <text class="form-label">验收结果 *</text>
+          <radio-group class="radio-group" bindchange="onAcceptanceResultChange">
+            <label class="radio-item">
+              <radio value="true" checked="{{acceptanceFormData.is_passed}}" />
+              <text class="radio-text">通过</text>
+            </label>
+            <label class="radio-item">
+              <radio value="false" checked="{{!acceptanceFormData.is_passed}}" />
+              <text class="radio-text">不通过</text>
+            </label>
+          </radio-group>
+        </view>
+
+        <!-- 评分选择 -->
+        <view class="form-item" wx:if="{{acceptanceFormData.is_passed}}">
+          <text class="form-label">评分分值 *</text>
+          <picker 
+            mode="selector" 
+            range="{{scoreOptions}}" 
+            range-key="label"
+            value="{{selectedScoreIndex}}"
+            bindchange="onScoreChange"
+          >
+            <view class="picker">
+              <text wx:if="{{acceptanceFormData.score}}">{{selectedScoreLabel}}</text>
+              <text wx:else class="placeholder">请选择评分</text>
+              <text class="picker-arrow">></text>
+            </view>
+          </picker>
+        </view>
+
+        <!-- 验收说明 -->
+        <view class="form-item">
+          <text class="form-label">验收说明 *</text>
+          <textarea 
+            class="form-textarea"
+            placeholder="请输入验收说明"
+            value="{{acceptanceFormData.acceptance_description}}"
+            bindinput="onAcceptanceDescriptionInput"
+            maxlength="500"
+            show-count
+          />
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="hideAcceptanceModal">取消</button>
+        <button class="modal-btn confirm" bindtap="submitAcceptance" disabled="{{submittingAcceptance}}">
+          {{submittingAcceptance ? '提交中...' : '确认验收'}}
+        </button>
+      </view>
+    </view>
+  </view>
 </view> 

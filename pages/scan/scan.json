@@ -2,5 +2,10 @@
   "navigationBarTitleText": "扫码",
   "navigationBarBackgroundColor": "#000000",
   "navigationBarTextStyle": "white",
-  "usingComponents": {}
+  "usingComponents": {},
+  "permission": {
+    "scope.camera": {
+      "desc": "需要使用您的摄像头进行设备扫码识别"
+    }
+  }
 } 

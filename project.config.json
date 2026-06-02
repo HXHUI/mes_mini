@@ -3,16 +3,16 @@
   "packOptions": {
     "ignore": [
       {
-        "type": "file",
-        "value": "package.json"
+        "value": "package.json",
+        "type": "file"
       },
       {
-        "type": "file",
-        "value": "package-lock.json"
+        "value": "package-lock.json",
+        "type": "file"
       },
       {
-        "type": "folder",
-        "value": "node_modules"
+        "value": "node_modules",
+        "type": "folder"
       }
     ],
     "include": []
@@ -43,16 +43,25 @@
     "minifyWXML": true,
     "localPlugins": false,
     "disableUseStrict": false,
+    "lazycode": true,
+    "useStaticServer": true,
+    "checkInvalidKey": true,
+    "coverView": true,
+    "showShadowRootInWxmlPanel": true,
+    "scopeDataCheck": false,
+    "checkSiteMap": true,
     "condition": false,
     "swc": false,
-    "disableSWC": true
+    "disableSWC": true,
+    "urlCheck": true,
+    "httpRequest": true
   },
   "simulatorType": "wechat",
   "simulatorPluginLibVersion": {},
   "condition": {},
   "srcMiniprogramRoot": "",
-  "appid": "wx352999db35546b0b",
-  "libVersion": "2.30.2",
+  "appid": "wxb8a8834582b6abc9",
+  "libVersion": "3.8.7",
   "editorSetting": {
     "tabIndent": "insertSpaces",
     "tabSize": 2

@@ -3,23 +3,65 @@ import { maintenanceApi } from '../../utils/api/maintenance.js';
 Page({
   data: {
     orderList: [],
-    tabType: 'all', // all, pending, processing, completed
+    tabType: 'all', // all, unassigned, pending, processing, completed, cancelled
     loading: false,
     hasMore: true,
     page: 1,
     pageSize: 10,
-    searchText: ''
+    searchText: '',
+    assignedToMe: false  // 添加分配给我的状态
   },
 
   onLoad: function(options) {
-    // 如果有传入的状态参数，更新tabType
-    if (options.status) {
+    console.log('保养工单列表页接收到的参数:', options);
+    
+    // 处理"分配给我"参数
+    if (options.filter_type === 'assigned_to_me' || options.type === 'my' || options.assigned_to) {
       this.setData({
-        tabType: options.status
+        assignedToMe: true
       });
+      
+      console.log('设置分配给我筛选为true');
+      
+      // 确保用户信息完整
+      const userInfo = wx.getStorageSync('userInfo');
+      if (!userInfo || (!userInfo.id && !userInfo.user_id)) {
+        wx.showToast({
+          title: '用户信息不完整，请重新登录',
+          icon: 'none',
+          duration: 2000
+        });
+        return;
+      }
     }
     
-    // 加载工单列表
+    // 处理不同类型的跳转
+    if (options.status) {
+      let tabType = 'all';
+      
+      // 状态映射
+      if (options.status === 'unassigned') {
+        tabType = 'unassigned';
+      } else if (options.status === 'pending') {
+        tabType = 'pending';
+      } else if (options.status === 'in_progress') {
+        tabType = 'processing';
+      } else if (options.status === 'completed') {
+        tabType = 'completed';
+      } else if (options.status === 'cancelled') {
+        tabType = 'cancelled';
+      }
+      
+      this.setData({
+        tabType: tabType
+      });
+    } else if (options.type && options.type !== 'my') {
+      // 处理不同类型的跳转
+        this.setData({
+          tabType: options.type
+        });
+    }
+    
     this.loadOrders();
   },
 
@@ -83,29 +125,64 @@ Page({
     });
   },
 
+  // 处理"分配给我"复选框变化
+  onAssignedToMeChange: function(e) {
+    this.setData({
+      assignedToMe: e.detail.value.length > 0,
+      page: 1,
+      orderList: []
+    });
+    this.loadOrders();
+  },
+
   // 加载保养工单列表
   loadOrders: function() {
     this.setData({ loading: true });
     
     // 构建API请求参数
     const params = {
+      type: 'MAINTENANCE',
       page: this.data.page,
       page_size: this.data.pageSize
     };
     
     // 根据选择的标签添加状态过滤
-    if (this.data.tabType === 'pending') {
+    if (this.data.tabType === 'unassigned') {
+      params.status = 'unassigned';
+    } else if (this.data.tabType === 'pending') {
       params.status = 'pending';
     } else if (this.data.tabType === 'processing') {
       params.status = 'in_progress';
     } else if (this.data.tabType === 'completed') {
       params.status = 'completed';
+    } else if (this.data.tabType === 'accepted') {
+      params.status = 'accepted';
+    } else if (this.data.tabType === 'cancelled') {
+      params.status = 'cancelled';
     }
     
     // 添加搜索关键词
-    if (this.data.searchText) {
-      params.search = this.data.searchText;
+    if (this.data.searchText && this.data.searchText.trim() !== '') {
+      params.keyword = this.data.searchText.trim();
     }
+    
+    // 添加分配给我的筛选条件
+    if (this.data.assignedToMe) {
+      const userInfo = wx.getStorageSync('userInfo');
+      console.log('当前用户信息:', userInfo);
+      
+      if (userInfo && userInfo.id) {
+        params.assigned_to = userInfo.id;
+        console.log('设置assigned_to参数为:', userInfo.id);
+      } else {
+        wx.showToast({
+          title: '用户信息不完整，无法筛选',
+          icon: 'none'
+        });
+      }
+    }
+    
+    console.log('加载保养工单，参数:', params);
     
     // 调用API获取保养工单列表
     maintenanceApi.getMaintenanceOrders(params)
@@ -135,6 +212,12 @@ Page({
           }
           
           console.log('获取到的保养工单数据:', newOrders);
+          
+          // 处理工单数据，添加hasStarted字段
+          newOrders = newOrders.map(order => ({
+            ...order,
+            hasStarted: !!order.actual_start // 根据actual_start字段判断工单是否已开始
+          }));
           
           const total = pagination.total || 0;
           
@@ -184,23 +267,46 @@ Page({
     
     // 构建API请求参数
     const params = {
+      type: 'MAINTENANCE',
       page: this.data.page,
       page_size: this.data.pageSize
     };
     
     // 根据选择的标签添加状态过滤
-    if (this.data.tabType === 'pending') {
+    if (this.data.tabType === 'unassigned') {
+      params.status = 'unassigned';
+    } else if (this.data.tabType === 'pending') {
       params.status = 'pending';
     } else if (this.data.tabType === 'processing') {
       params.status = 'in_progress';
     } else if (this.data.tabType === 'completed') {
       params.status = 'completed';
+    } else if (this.data.tabType === 'cancelled') {
+      params.status = 'cancelled';
     }
     
     // 添加搜索关键词
-    if (this.data.searchText) {
-      params.search = this.data.searchText;
+    if (this.data.searchText && this.data.searchText.trim() !== '') {
+      params.keyword = this.data.searchText.trim();
     }
+    
+    // 添加分配给我的筛选条件
+    if (this.data.assignedToMe) {
+      const userInfo = wx.getStorageSync('userInfo');
+      console.log('当前用户信息:', userInfo);
+      
+      if (userInfo && userInfo.id) {
+        params.assigned_to = userInfo.id;
+        console.log('设置assigned_to参数为:', userInfo.id);
+      } else {
+        wx.showToast({
+          title: '用户信息不完整，无法筛选',
+          icon: 'none'
+        });
+      }
+    }
+    
+    console.log('加载更多保养工单，参数:', params);
     
     // 调用API获取更多工单
     maintenanceApi.getMaintenanceOrders(params)
@@ -222,6 +328,12 @@ Page({
             });
             return;
           }
+          
+          // 处理工单数据，添加hasStarted字段
+          newOrders = newOrders.map(order => ({
+            ...order,
+            hasStarted: !!order.actual_start // 根据actual_start字段判断工单是否已开始
+          }));
           
           // 获取分页信息
           const total = pagination.total || 0;
@@ -337,15 +449,6 @@ Page({
             });
         }
       }
-    });
-  },
-
-  // 完成工单
-  completeOrder: function(e) {
-    const id = e.currentTarget.dataset.id;
-    
-    wx.navigateTo({
-      url: `/pages/order-detail/order-detail?id=${id}&type=MAINTENANCE&action=complete`
     });
   },
 

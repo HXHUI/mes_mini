@@ -9,11 +9,6 @@ Component({
       iconClass: "icon-home",
       selectedIconClass: "icon-home-fill"
     }, {
-      pagePath: "/pages/messages/messages",
-      text: "消息",
-      iconClass: "icon-message",
-      selectedIconClass: "icon-message-fill"
-    }, {
       pagePath: "/pages/profile/profile",
       text: "我的",
       iconClass: "icon-user",

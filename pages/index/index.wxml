@@ -12,18 +12,59 @@
   </view>
   
   <!-- 统计区域 -->
-  <view class="statistics-area">
-    <view class="stat-card" bindtap="viewWorkOrders" data-type="pending">
-      <text class="stat-number">{{statistics.todoCount || 5}}</text>
-      <text class="stat-label">待处理</text>
+  <view class="statistics-section">
+    <view class="section-title">工单统计</view>
+    
+    <!-- 维修工单统计 -->
+    <view class="statistics-area repair-stats" bindtap="viewRepairOrders">
+      <view class="stat-header">
+        <text class="stat-title">维修工单</text>
+        <text class="stat-more">查看全部 ></text>
+      </view>
+      <view class="stat-cards">
+        <view class="stat-card">
+          <text class="stat-number">{{statistics.repair.todoCount || 0}}</text>
+          <text class="stat-label">待执行</text>
+        </view>
+        <view class="stat-card">
+          <text class="stat-number">{{statistics.repair.processingCount || 0}}</text>
+          <text class="stat-label">执行中</text>
+        </view>
+        <view class="stat-card">
+          <text class="stat-number">{{statistics.repair.completedCount || 0}}</text>
+          <text class="stat-label">已完成</text>
+        </view>
+        <view class="stat-card">
+          <text class="stat-number">{{statistics.repair.canceledCount || 0}}</text>
+          <text class="stat-label">已取消</text>
+        </view>
+      </view>
     </view>
-    <view class="stat-card" bindtap="viewWorkOrders" data-type="in_progress">
-      <text class="stat-number">{{statistics.processingCount || 3}}</text>
-      <text class="stat-label">处理中</text>
+    
+    <!-- 保养工单统计 -->
+    <view class="statistics-area maintenance-stats" bindtap="viewMaintenanceOrders">
+      <view class="stat-header">
+        <text class="stat-title">保养工单</text>
+        <text class="stat-more">查看全部 ></text>
+      </view>
+      <view class="stat-cards">
+        <view class="stat-card">
+          <text class="stat-number">{{statistics.maintenance.todoCount || 0}}</text>
+          <text class="stat-label">待执行</text>
+        </view>
+        <view class="stat-card">
+          <text class="stat-number">{{statistics.maintenance.processingCount || 0}}</text>
+          <text class="stat-label">执行中</text>
     </view>
-    <view class="stat-card" bindtap="viewWorkOrders" data-type="completed">
-      <text class="stat-number">{{statistics.completedCount || 12}}</text>
+        <view class="stat-card">
+          <text class="stat-number">{{statistics.maintenance.completedCount || 0}}</text>
       <text class="stat-label">已完成</text>
+    </view>
+        <view class="stat-card">
+          <text class="stat-number">{{statistics.maintenance.canceledCount || 0}}</text>
+      <text class="stat-label">已取消</text>
+        </view>
+      </view>
     </view>
   </view>
   
@@ -31,58 +72,21 @@
   <view class="function-area">
     <view class="section-title">快捷功能</view>
     <view class="function-cards">
-      <!-- 故障申报卡片 -->
+      <!-- 动态渲染功能卡片 -->
       <view 
-        class="function-card" 
-        style="background-color: #2196F3"
+        wx:for="{{functionCards}}" 
+        wx:key="id"
+        class="function-card"
+        style="background-color: {{item.bgColor}};"
         bindtap="navigateTo"
-        data-path="/pages/fault-report/fault-report"
+        data-path="{{item.path}}"
       >
-        <image class="card-icon" src="/images/icons/report.png" mode="aspectFit"></image>
-        <view class="card-info">
-          <text class="card-title">故障申报</text>
-          <text class="card-desc">随在线申报</text>
+        <view class="card-icon">
+          <image class="card-image" src="{{item.icon}}" mode="aspectFit"></image>
         </view>
-      </view>
-      
-      <!-- 保养工单卡片 -->
-      <view 
-        class="function-card" 
-        style="background-color: #9C27B0"
-        bindtap="navigateTo"
-        data-path="/pages/maintenance-orders/maintenance-orders"
-      >
-        <image class="card-icon" src="/images/icons/work-order.png" mode="aspectFit"></image>
         <view class="card-info">
-          <text class="card-title">保养工单</text>
-          <text class="card-desc">设备保养</text>
-        </view>
-      </view>
-      
-      <!-- 维修工单卡片 -->
-      <view 
-        class="function-card" 
-        style="background-color: #4CAF50"
-        bindtap="navigateTo"
-        data-path="/pages/repair-orders/repair-orders"
-      >
-        <image class="card-icon" src="/images/icons/repair.png" mode="aspectFit"></image>
-        <view class="card-info">
-          <text class="card-title">维修工单</text>
-          <text class="card-desc">查看全部工单</text>
-        </view>
-      </view>
-      
-      <!-- 扫码维修卡片 -->
-      <view 
-        class="function-card" 
-        style="background-color: #FF7043"
-        bindtap="handleScan"
-      >
-        <image class="card-icon" src="/images/icons/scan.png" mode="aspectFit"></image>
-        <view class="card-info">
-          <text class="card-title">扫码维修</text>
-          <text class="card-desc">扫码维修</text>
+          <text class="card-title">{{item.title}}</text>
+          <text class="card-desc">{{item.desc}}</text>
         </view>
       </view>
     </view>

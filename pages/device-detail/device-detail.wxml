@@ -6,74 +6,136 @@
     <view class="loading-text">加载中...</view>
   </view>
 
-  <view wx:if="{{!isLoading && deviceInfo}}">
-    <view class="device-header">
-      <view class="device-name">{{deviceInfo.device_name}}</view>
-      <view class="device-status {{deviceInfo.status === 'normal' ? 'normal' : 'fault'}}">
-        {{deviceInfo.statusText}}
+  <view class="content-wrapper" wx:if="{{!isLoading && deviceInfo}}">
+    <!-- 设备头部信息卡片 -->
+    <view class="device-card">
+      <view class="device-header">
+        <view class="device-title">
+          <view class="device-name">{{deviceInfo.device_name}}</view>
+          <view class="device-id">{{deviceInfo.device_id}}</view>
+        </view>
+        <view class="device-status {{deviceInfo.status === 'normal' ? 'normal' : 'fault'}}">
+          <view class="status-dot"></view>
+          <text>{{deviceInfo.statusText || (deviceInfo.status === 'normal' ? '正常运行' : '故障')}}</text>
+        </view>
+      </view>
+      
+      <!-- 设备运行状态图标 -->
+      <view class="device-status-icon {{deviceInfo.status === 'normal' ? 'normal' : 'fault'}}">
+        <view class="icon-circle">
+          <view class="icon-inner"></view>
+        </view>
       </view>
     </view>
     
-    <view class="device-info">
-      <view class="info-item">
-        <text class="label">设备编号：</text>
-        <text class="value">{{deviceInfo.device_id}}</text>
+    <!-- 基本信息卡片 -->
+    <view class="info-card">
+      <view class="card-title">
+        <view class="title-line"></view>
+        <text>基本信息</text>
       </view>
-      <view class="info-item">
-        <text class="label">设备类型：</text>
-        <text class="value">
-          <block wx:if="{{deviceInfo.device_type === 'production'}}">生产设备</block>
-          <block wx:elif="{{deviceInfo.device_type === 'testing'}}">检测设备</block>
-          <block wx:elif="{{deviceInfo.device_type === 'office'}}">办公设备</block>
-          <block wx:elif="{{deviceInfo.device_type === 'other'}}">其他设备</block>
-          <block wx:else>{{deviceInfo.device_type || '未知'}}</block>
-        </text>
+      
+      <view class="info-grid">
+        <view class="info-item">
+          <text class="label">设备类型</text>
+          <text class="value">
+            <block wx:if="{{deviceInfo.device_type === 'production'}}">生产设备</block>
+            <block wx:elif="{{deviceInfo.device_type === 'testing'}}">检测设备</block>
+            <block wx:elif="{{deviceInfo.device_type === 'office'}}">办公设备</block>
+            <block wx:elif="{{deviceInfo.device_type === 'other'}}">其他设备</block>
+            <block wx:else>{{deviceInfo.device_type || '未知'}}</block>
+          </text>
+        </view>
+        <view class="info-item">
+          <text class="label">所在位置</text>
+          <text class="value">{{deviceInfo.location || '未知'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">所属部门</text>
+          <text class="value">{{deviceInfo.department || '未知'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">创建时间</text>
+          <text class="value">{{deviceInfo.created_at || '未知'}}</text>
+        </view>
       </view>
-      <view class="info-item">
-        <text class="label">所在位置：</text>
-        <text class="value">{{deviceInfo.location || '未知'}}</text>
-      </view>
-      <view class="info-item">
-        <text class="label">所属部门：</text>
-        <text class="value">{{deviceInfo.department || '未知'}}</text>
-      </view>
-      <view class="info-item">
-        <text class="label">创建时间：</text>
-        <text class="value">{{deviceInfo.created_at || '未知'}}</text>
-      </view>
-      <view class="info-item" wx:if="{{deviceInfo.description}}">
-        <text class="label">设备描述：</text>
+      
+      <view class="info-desc" wx:if="{{deviceInfo.description}}">
+        <text class="label">设备描述</text>
         <text class="value">{{deviceInfo.description}}</text>
       </view>
     </view>
     
-    <view class="section" wx:if="{{deviceInfo.parameters && deviceInfo.parameters.length > 0}}">
-      <view class="section-title">设备参数</view>
+    <!-- 设备参数卡片 -->
+    <view class="info-card" wx:if="{{deviceInfo.parameters && deviceInfo.parameters.length > 0}}">
+      <view class="card-title">
+        <view class="title-line"></view>
+        <text>设备参数</text>
+        <view class="refresh-btn" bindtap="refreshParameters">
+          <view class="refresh-icon"></view>
+          <text>刷新</text>
+        </view>
+      </view>
       <view class="parameter-list">
-        <view class="parameter-item" wx:for="{{deviceInfo.parameters}}" wx:key="name">
-          <text class="param-name">{{item.name}}</text>
-          <text class="param-value">{{item.value}} {{item.unit}}</text>
+        <view class="parameter-item" wx:for="{{deviceInfo.parameters}}" wx:key="code" bindtap="viewParameterHistory" data-code="{{item.code}}" data-name="{{item.name}}">
+          <view class="param-content">
+            <text class="param-name">{{item.name}}</text>
+            <text class="param-value">{{item.value}} <text class="param-unit">{{item.unit}}</text></text>
+          </view>
+          <view class="param-history-icon" wx:if="{{item.code}}">
+            <view class="history-icon"></view>
+          </view>
         </view>
+      </view>
+      <view class="parameter-tip" wx:if="{{deviceInfo.parameters.length > 0}}">
+        <text>点击参数可查看历史数据</text>
+        <text class="update-time" wx:if="{{deviceInfo.parameters[0].timestamp}}">更新时间: {{deviceInfo.parameters[0].timestamp}}</text>
       </view>
     </view>
     
-    <view class="section">
-      <view class="section-title">维修记录</view>
+    <!-- 维修保养记录卡片 -->
+    <view class="info-card">
+      <view class="card-title">
+        <view class="title-line"></view>
+        <text>维修保养记录</text>
+      </view>
+      
+      <!-- 记录类型筛选 -->
+      <view class="record-filter">
+        <view class="filter-item {{recordFilter === 'all' ? 'active' : ''}}" bindtap="setRecordFilter" data-type="all">
+          <view class="checkbox {{recordFilter === 'all' ? 'checked' : ''}}"></view>
+          <text>全部</text>
+        </view>
+        <view class="filter-item {{recordFilter === 'repair' ? 'active' : ''}}" bindtap="setRecordFilter" data-type="repair">
+          <view class="checkbox {{recordFilter === 'repair' ? 'checked' : ''}}"></view>
+          <text>维修</text>
+        </view>
+        <view class="filter-item {{recordFilter === 'maintenance' ? 'active' : ''}}" bindtap="setRecordFilter" data-type="maintenance">
+          <view class="checkbox {{recordFilter === 'maintenance' ? 'checked' : ''}}"></view>
+          <text>保养</text>
+        </view>
+      </view>
+      
       <view class="repair-list">
-        <view class="empty-tip" wx:if="{{!repairRecords || repairRecords.length === 0}}">
-          暂无维修记录
+        <view class="empty-tip" wx:if="{{!filteredRecords || filteredRecords.length === 0}}">
+          <view class="empty-icon"></view>
+          <text>暂无{{recordFilter === 'all' ? '维修保养' : recordFilter === 'repair' ? '维修' : '保养'}}记录</text>
         </view>
-        <view class="repair-item" wx:for="{{repairRecords}}" wx:key="id" bindtap="viewRepairDetail" data-id="{{item.id}}">
-          <view class="repair-time">{{item.time}}</view>
+        <view class="repair-item" wx:for="{{filteredRecords}}" wx:key="id" bindtap="viewRecordDetail" data-id="{{item.id}}">
+          <view class="repair-header">
+            <view class="repair-time">{{item.time}}</view>
+            <view class="repair-type {{item.record_type === 'maintenance' ? 'maintenance-type' : 'repair-type'}}">
+              {{item.record_type === 'maintenance' ? '保养' : '维修'}}
+            </view>
+          </view>
           <view class="repair-desc">{{item.description}}</view>
-          <view class="repair-person">处理人：{{item.handler}}</view>
+          <view class="repair-footer">
+            <view class="repair-person">处理人：{{item.handler}}</view>
+            <view class="repair-status-tag">{{item.status || '已完成'}}</view>
+            <view class="repair-more">查看详情 ></view>
+          </view>
         </view>
       </view>
-    </view>
-    
-    <view class="action-bar">
-      <button class="action-btn report" bindtap="reportFault">报修</button>
-      <button class="action-btn maintenance" bindtap="startMaintenance">维护</button>
     </view>
   </view>
   

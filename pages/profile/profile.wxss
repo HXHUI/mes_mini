@@ -95,8 +95,6 @@
 }
 
 .menu-icon.repair {
-  background-color: rgba(0, 120, 215, 0.1);
-  color: #0078D7;
 }
 
 .menu-icon.history {
@@ -112,6 +110,12 @@
 .menu-icon.setting {
   background-color: rgba(0, 120, 215, 0.1);
   color: #0078D7;
+}
+
+.menu-icon.wechat {
+}
+
+.menu-icon.maintenance {
 }
 
 .menu-text {

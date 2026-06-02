@@ -1,5 +1,7 @@
 // 引入API模块
 import { repairApi } from '../../utils/api/repair.js';
+import { deviceWorkOrderApi } from '../../utils/api/device-work-order.js';
+import { wxConfig } from '../../utils/api/index';
 
 Page({
   data: {
@@ -9,30 +11,58 @@ Page({
     loading: false,
     hasMore: true,
     pageNum: 1,
-    pageSize: 10
+    pageSize: 10,
+    assignedToMe: false  // 添加分配给我的状态
   },
 
   onLoad: function (options) {
+    console.log('维修工单列表页接收到的参数:', options);
+    
+    // 处理"分配给我"参数
+    if (options.filter_type === 'assigned_to_me' || options.type === 'my' || options.assigned_to) {
+      this.setData({
+        assignedToMe: true
+      });
+      
+      console.log('设置分配给我筛选为true');
+      
+      // 确保用户信息完整
+      const userInfo = wx.getStorageSync('userInfo');
+      if (!userInfo || (!userInfo.id && !userInfo.user_id)) {
+        wx.showToast({
+          title: '用户信息不完整，请重新登录',
+          icon: 'none',
+          duration: 2000
+        });
+        return;
+      }
+    }
+    
     // 如果从首页点击统计数据跳转而来，根据状态参数设置选项卡
     if (options.status) {
       let tabType = 'all';
       
       // 状态映射
-      if (options.status === 'pending') {
+      if (options.status === 'unassigned') {
+        tabType = 'unassigned';
+      } else if (options.status === 'pending') {
         tabType = 'pending';
       } else if (options.status === 'in_progress') {
         tabType = 'processing';
       } else if (options.status === 'completed') {
         tabType = 'completed';
+      } else if (options.status === 'cancelled') {
+        tabType = 'cancelled';
       }
       
       this.setData({
         tabType: tabType
       });
-    } else if (options.type) {
-      this.setData({
-        tabType: options.type
-      });
+    } else if (options.type && options.type !== 'my') {
+      // 处理不同类型的跳转
+        this.setData({
+          tabType: options.type
+        });
     }
     
     this.loadOrderList(true);
@@ -73,7 +103,8 @@ Page({
   search: function () {
     this.setData({
       pageNum: 1,
-      hasMore: true
+      hasMore: true,
+      orderList: []
     });
     this.loadOrderList(true);
   },
@@ -85,6 +116,16 @@ Page({
     });
   },
   
+  // 处理"分配给我"复选框变化
+  onAssignedToMeChange: function(e) {
+    this.setData({
+      assignedToMe: e.detail.value.length > 0,
+      pageNum: 1,
+      orderList: []
+    });
+    this.loadOrderList(true);
+  },
+  
   loadOrderList: function (refresh = false) {
     if (this.data.loading) return;
     
@@ -92,23 +133,53 @@ Page({
       loading: true
     });
     
-    // 获取对应状态的工单列表
-    let apiMethod;
-    switch (this.data.tabType) {
-      case 'pending':
-        apiMethod = repairApi.getPendingWorkOrders(this.data.pageNum, this.data.pageSize);
-        break;
-      case 'processing':
-        apiMethod = repairApi.getProcessingWorkOrders(this.data.pageNum, this.data.pageSize);
-        break;
-      case 'completed':
-        apiMethod = repairApi.getWorkOrderList('completed', this.data.pageNum, this.data.pageSize);
-        break;
-      default:
-        apiMethod = repairApi.getWorkOrderList('', this.data.pageNum, this.data.pageSize);
+    // 构建API请求参数
+    const params = {
+      type: 'REPAIR',
+      page: this.data.pageNum,
+      pageSize: this.data.pageSize
+    };
+    
+    // 根据选项卡添加状态过滤
+    if (this.data.tabType === 'unassigned') {
+      params.status = 'unassigned';
+    } else if (this.data.tabType === 'pending') {
+      params.status = 'pending';
+    } else if (this.data.tabType === 'processing') {
+      params.status = 'in_progress';
+    } else if (this.data.tabType === 'completed') {
+      params.status = 'completed';
+    } else if (this.data.tabType === 'accepted') {
+      params.status = 'accepted';
+    } else if (this.data.tabType === 'cancelled') {
+      params.status = 'cancelled';
     }
     
-    apiMethod
+    // 添加搜索关键词
+    if (this.data.searchText && this.data.searchText.trim() !== '') {
+      params.keyword = this.data.searchText.trim();
+    }
+    
+    // 添加分配给我的筛选条件
+    if (this.data.assignedToMe) {
+      const userInfo = wx.getStorageSync('userInfo');
+      console.log('当前用户信息:', userInfo);
+      
+      if (userInfo && userInfo.id) {
+        params.assigned_to = userInfo.id;
+        console.log('设置assigned_to参数为:', userInfo.id);
+      } else {
+        wx.showToast({
+          title: '用户信息不完整，无法筛选',
+          icon: 'none'
+        });
+      }
+    }
+    
+    console.log('加载维修工单，参数:', params);
+    
+    // 调用API获取工单列表
+    repairApi.getWorkOrders(params)
       .then(res => {
         if (res && res.code === 200) {
           // 处理返回数据
@@ -178,7 +249,7 @@ Page({
     this.setData({
       pageNum: this.data.pageNum + 1
     });
-    this.loadOrderList();
+    this.loadOrderList(false);
   },
   
   getMockOrderList: function () {
@@ -341,36 +412,7 @@ Page({
     });
   },
   
-  completeOrder: function (e) {
-    const id = e.currentTarget.dataset.id;
-    wx.showModal({
-      title: '完成工单',
-      content: `确定要完成工单 ${id} 吗？`,
-      success: (res) => {
-        if (res.confirm) {
-          // 模拟完成工单
-          let orderList = this.data.orderList;
-          for (let i = 0; i < orderList.length; i++) {
-            if (orderList[i].id === id) {
-              orderList[i].status = 'completed';
-              break;
-            }
-          }
-          
-          this.setData({
-            orderList: orderList
-          });
-          
-          wx.showToast({
-            title: '工单已完成',
-            icon: 'success'
-          });
-        }
-      }
-    });
-  },
-  
   viewDetail: function (e) {
     this.viewOrderDetail(e);
-  }
+  },
 });

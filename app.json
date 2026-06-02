@@ -2,21 +2,22 @@
   "pages": [
     "pages/index/index",
     "pages/login/login",
-    "pages/messages/messages",
     "pages/profile/profile",
     "pages/scan/scan",
     "pages/device-detail/device-detail",
     "pages/fault-report/fault-report",
     "pages/repair-orders/repair-orders",
     "pages/order-detail/order-detail",
+
     "pages/fault-handle/fault-handle",
     "pages/device-list/device-list",
-    "pages/maintenance-orders/maintenance-orders"
+    "pages/maintenance-orders/maintenance-orders",
+    "pages/account-bind/account-bind"
   ],
   "window": {
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#0078D7",
-    "navigationBarTitleText": "MES鐢熶骇鎵ц绠＄悊",
+    "navigationBarTitleText": "MES生产执行管理",
     "navigationBarTextStyle": "white"
   },
   "tabBar": {
@@ -31,10 +32,6 @@
         "text": "首页"
       },
       {
-        "pagePath": "pages/messages/messages",
-        "text": "消息"
-      },
-      {
         "pagePath": "pages/profile/profile",
         "text": "我的"
       }
@@ -46,6 +43,12 @@
     "chooseAddress"
   ],
   "requiredBackgroundModes": [],
+  "permission": {
+    "scope.camera": {
+      "desc": "需要使用您的摄像头进行设备扫码识别"
+    }
+  },
   "usingComponents": {},
-  "sitemapLocation": "sitemap.json"
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
 } 

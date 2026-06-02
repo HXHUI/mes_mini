@@ -57,6 +57,8 @@
   border-bottom: 1rpx solid #f0f0f0;
   width: 100%;
   box-sizing: border-box;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .search-box {
@@ -67,6 +69,7 @@
   background-color: #f5f5f5;
   padding: 0 20rpx;
   margin-right: 20rpx;
+  min-width: 200rpx;
 }
 
 .search-input {
@@ -98,6 +101,26 @@
 .filter-icon {
   font-size: 24rpx;
   margin-left: 6rpx;
+}
+
+.filter-options {
+  display: flex;
+  align-items: center;
+  margin-right: 20rpx;
+  margin-top: 10rpx;
+  margin-bottom: 10rpx;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  font-size: 26rpx;
+  color: #666666;
+}
+
+.checkbox-label checkbox {
+  margin-right: 6rpx;
+  transform: scale(0.8);
 }
 
 .order-list {
@@ -135,6 +158,12 @@
   padding: 4rpx 16rpx;
   border-radius: 20rpx;
   font-size: 24rpx;
+  font-weight: 500;
+}
+
+.order-status.unassigned {
+  background-color: #f9f0ff;
+  color: #722ed1;
 }
 
 .order-status.pending {
@@ -142,7 +171,7 @@
   color: #fa8c16;
 }
 
-.order-status.processing, .order-status.in_progress {
+.order-status.in_progress {
   background-color: #e6f7ff;
   color: #1890ff;
 }
@@ -150,6 +179,17 @@
 .order-status.completed {
   background-color: #f6ffed;
   color: #52c41a;
+}
+
+.order-status.accepted {
+  background-color: #e6f7ff;
+  color: #1890ff;
+}
+
+.order-status.cancelled,
+.order-status.canceled {
+  background-color: #f44336;
+  color: #ffffff;
 }
 
 .order-content {
@@ -194,6 +234,7 @@
   display: flex;
   font-size: 26rpx;
   color: #999999;
+  margin-bottom: 10rpx;
 }
 
 .report-time {
@@ -317,4 +358,21 @@
   padding: 30rpx 0;
   color: #999999;
   font-size: 28rpx;
+}
+
+/* 添加负责人信息的样式 */
+.handler-info {
+  margin-top: 15rpx;
+  font-size: 28rpx;
+  padding: 5rpx 0;
+  border-top: 1rpx dashed #f0f0f0;
+}
+
+.handler-info .label {
+  color: #666666;
+}
+
+.handler-info .value {
+  color: #333333;
+  margin-left: 5rpx;
 } 

@@ -1,6 +1,8 @@
 {
   "navigationBarTitleText": "工单详情",
-  "usingComponents": {},
+  "usingComponents": {
+    "safe-image": "/components/safe-image/safe-image"
+  },
   "enablePullDownRefresh": true,
   "backgroundTextStyle": "dark"
 } 

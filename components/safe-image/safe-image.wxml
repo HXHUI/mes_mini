@@ -1,0 +1,24 @@
+<!-- components/safe-image/safe-image.wxml -->
+<view class="safe-image-container" style="width: {{width}}; height: {{height}}; border-radius: {{radius}};">
+  <block wx:if="{{loading}}">
+    <view class="loading-container">
+      <view class="loading"></view>
+    </view>
+  </block>
+  <block wx:elif="{{error}}">
+    <view class="error-container" wx:if="{{showError}}">
+      <image class="error-image" src="{{fallbackSrc}}" mode="aspectFit"></image>
+      <text class="error-text">图片加载失败</text>
+    </view>
+  </block>
+  <block wx:elif="{{localSrc}}">
+    <image 
+      class="safe-image" 
+      src="{{localSrc}}" 
+      mode="{{mode}}" 
+      bindtap="handleTap"
+      binderror="handleImageError"
+      style="width: 100%; height: 100%; border-radius: {{radius}};"
+    ></image>
+  </block>
+</view> 

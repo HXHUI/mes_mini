@@ -23,7 +23,8 @@
     <view class="other-login">
       <button 
         class="wechat-login-btn" 
-        bindtap="handleWechatLogin"
+        open-type="getPhoneNumber"
+        bindgetphonenumber="handleGetPhoneNumber"
         loading="{{isWechatLoading}}"
         disabled="{{isWechatLoading || isLoading}}"
       >

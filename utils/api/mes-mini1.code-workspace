@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		},
+		{
+			"path": "../../../mes_backend"
+		},
+		{
+			"path": "../../../mes_web"
+		}
+	],
+	"settings": {}
+}

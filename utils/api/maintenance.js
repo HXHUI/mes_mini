@@ -13,7 +13,7 @@ const maintenanceApi = {
         maintenance_type: data.maintenance_type,
         priority_level: data.priority,
         description: data.description,
-        creator_name: data.contact_name,
+        creator_id: data.creator_id,
         creator_phone: data.contact_phone,
         assigned_to: data.assigned_to || null,
         scheduled_start: data.scheduled_start || null,
@@ -106,23 +106,27 @@ const maintenanceApi = {
   },
   
   // 接单处理
-  acceptMaintenanceOrder(orderId, assigned_to) {
+  acceptMaintenanceOrder(orderId, assigned_to, assignment_type = 'self_assigned', assigned_by = null) {
     return request({
       url: `/api/device-work-order/${orderId}/accept`,
       method: 'POST',
       data: {
-        assigned_to
+        assigned_to,
+        assignment_type,
+        assigned_by
       }
     });
   },
   
   // 开始保养工单
   startMaintenanceOrder(orderId,actual_start) {
+    
     return request({
       url: `/api/device-work-order/${orderId}`,
       method: 'PUT',
       data: {
-        actual_start
+        actual_start,
+        status: 'in_progress'
       }
     });
   },
@@ -134,7 +138,10 @@ const maintenanceApi = {
       method: 'PUT',
       data: {
         status: 'completed',
-        actual_end: completionData.actual_end
+        actual_end: completionData.actual_end,
+        handle_description: completionData.handle_description || '',
+        solution_description: completionData.solution_description || '',
+        used_materials: completionData.used_materials || ''
       }
     });
   }

@@ -13,8 +13,7 @@ const repairApi = {
         fault_type: data.fault_type,
         urgency_level: data.urgency,
         description: data.description,
-        creator_name: data.contact_name,
-        creator_phone: data.contact_phone,
+        creator_id: data.creator_id,
         assigned_to: null, // 初始为空，由后台指派
         scheduled_start: null,
         scheduled_end: null,
@@ -120,7 +119,7 @@ const repairApi = {
       method: 'GET',
       data: {
         type: 'REPAIR',
-        status: 'processing',
+        status: 'in_progress',
         page: page,
         pageSize: limit
       }
@@ -156,7 +155,8 @@ const repairApi = {
       url: `/api/device-work-order/${orderId}`,
       method: 'PUT',
       data: {
-        actual_start
+        actual_start,
+        status: 'in_progress'
       }
     });
   },

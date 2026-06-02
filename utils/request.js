@@ -1,4 +1,16 @@
 // request.js - 网络请求封装
+import { userApi } from './api/user.js'
+
+// 是否正在刷新token
+let isRefreshing = false
+// 等待token刷新的请求队列
+let requestsQueue = []
+
+// 执行被挂起的请求
+const executeQueue = (token) => {
+  requestsQueue.forEach(cb => cb(token))
+  requestsQueue = []
+}
 
 /**
  * 封装微信请求方法
@@ -28,14 +40,27 @@ export const request = (options) => {
   // 获取token
   const token = wx.getStorageSync('token')
   
+  // 获取用户ID
+  const userInfo = wx.getStorageSync('userInfo') || {}
+  const userId = userInfo.id || userInfo.userId || userInfo.user_id || ''
+  
+  // 添加userId作为URL参数
+  const separator = url.includes('?') ? '&' : '?'
+  const finalUrl = userId ? `${url}${separator}userId=${userId}` : url
+  
+  // 输出请求信息，帮助调试
+  console.log('请求URL:', finalUrl)
+  console.log('用户ID:', userId)
+  
   return new Promise((resolve, reject) => {
-    wx.request({
-      url,
+    const requestTask = wx.request({
+      url: finalUrl,
       method: options.method || 'GET',
       data: options.data,
       header: {
         'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : ''
+        'Authorization': token ? `Bearer ${token}` : '',
+        'x-user-id': userId
       },
       success: (res) => {
         if (options.showLoading !== false) {
@@ -48,31 +73,8 @@ export const request = (options) => {
           if (res.data.code === 200 || res.data.code === 201 || res.data.code === 0 || !res.data.code) {
             resolve(res.data)
           } else if (res.data.code === 401) {
-            // 未授权，清除登录状态
-            wx.removeStorageSync('token')
-            wx.removeStorageSync('userInfo')
-            
-            // 跳转到登录页，但避免在登录页面再次跳转造成循环
-            const pages = getCurrentPages()
-            const currentPage = pages[pages.length - 1]
-            const isLoginPage = currentPage && currentPage.route && currentPage.route.includes('login')
-            
-            if (!isLoginPage) {
-              wx.showToast({
-                title: '登录状态已失效，请重新登录',
-                icon: 'none',
-                duration: 2000
-              })
-              
-              // 使用switchTab跳转到登录页
-              setTimeout(() => {
-                wx.reLaunch({
-                  url: '/pages/login/login'
-                })
-              }, 2000)
-            }
-            
-            reject(new Error('登录状态已失效，请重新登录'))
+            // 尝试刷新token
+            handleTokenRefresh(options, resolve, reject)
           } else {
             // 其他业务错误
             const errMsg = res.data.message || '请求失败'
@@ -86,31 +88,24 @@ export const request = (options) => {
             reject(new Error(errMsg))
           }
         } else if (res.statusCode === 401 || res.statusCode === 403) {
-          // HTTP 401/403 错误，清除登录状态
-          wx.removeStorageSync('token')
-          wx.removeStorageSync('userInfo')
-          
-          // 跳转到登录页，但避免在登录页面再次跳转造成循环
-          const pages = getCurrentPages()
-          const currentPage = pages[pages.length - 1]
-          const isLoginPage = currentPage && currentPage.route && currentPage.route.includes('login')
-          
-          if (!isLoginPage) {
+          // 尝试刷新token
+          handleTokenRefresh(options, resolve, reject)
+        } else if (res.statusCode === 400) {
+          // 处理400错误，通常是请求参数错误或业务逻辑错误
+          const errMsg = res.data.message || '请求参数错误'
+          if (options.showError !== false) {
             wx.showToast({
-              title: '登录状态已失效，请重新登录',
+              title: errMsg,
               icon: 'none',
               duration: 2000
             })
-            
-            // 使用reLaunch跳转到登录页
-            setTimeout(() => {
-              wx.reLaunch({
-                url: '/pages/login/login'
-              })
-            }, 2000)
           }
-          
-          reject(new Error('登录状态已失效，请重新登录'))
+          // 将完整的响应数据传递给reject，便于调用方获取更多信息
+          reject({
+            message: errMsg,
+            data: res.data,
+            statusCode: res.statusCode
+          })
         } else {
           // 其他HTTP状态码错误
           const errMsg = `请求失败: ${res.statusCode}`
@@ -143,6 +138,95 @@ export const request = (options) => {
   })
 }
 
+// 处理token刷新
+const handleTokenRefresh = (options, resolve, reject) => {
+  // 获取refreshToken
+  const refreshToken = wx.getStorageSync('refreshToken')
+  
+  // 如果没有refreshToken，直接跳转到登录页
+  if (!refreshToken) {
+    handleLogout(options, reject)
+    return
+  }
+  
+  // 判断是否正在刷新token
+  if (isRefreshing) {
+    // 将请求加入队列
+    requestsQueue.push((token) => {
+      request(Object.assign({}, options, {
+        header: Object.assign({}, options.header, {
+          'Authorization': `Bearer ${token}`
+        })
+      })).then(resolve).catch(reject)
+    })
+    return
+  }
+  
+  // 开始刷新token
+  isRefreshing = true
+  
+  // 调用刷新token接口
+  userApi.refreshToken(refreshToken)
+    .then(res => {
+      isRefreshing = false
+      
+      if (res && res.data && res.data.token) {
+        // 更新本地存储的token
+        wx.setStorageSync('token', res.data.token)
+        if (res.data.refreshToken) {
+          wx.setStorageSync('refreshToken', res.data.refreshToken)
+        }
+        
+        // 执行队列中的请求
+        executeQueue(res.data.token)
+        
+        // 重试当前请求
+        request(options).then(resolve).catch(reject)
+      } else {
+        // 刷新token失败，跳转到登录页
+        handleLogout(options, reject)
+      }
+    })
+    .catch(() => {
+      isRefreshing = false
+      // 刷新token出错，跳转到登录页
+      handleLogout(options, reject)
+    })
+}
+
+// 处理退出登录
+const handleLogout = (options, reject) => {
+  // 清除登录状态
+  wx.removeStorageSync('token')
+  wx.removeStorageSync('refreshToken')
+  wx.removeStorageSync('userInfo')
+  
+  // 跳转到登录页，但避免在登录页面再次跳转造成循环
+  const pages = getCurrentPages()
+  const currentPage = pages[pages.length - 1]
+  const isLoginPage = currentPage && currentPage.route && currentPage.route.includes('login')
+  
+  if (!isLoginPage) {
+    wx.showToast({
+      title: '登录状态已失效，请重新登录',
+      icon: 'none',
+      duration: 2000
+    })
+    
+    // 使用reLaunch跳转到登录页
+    setTimeout(() => {
+      wx.reLaunch({
+        url: '/pages/login/login'
+      })
+    }, 2000)
+  }
+  
+  // 抛出错误
+  if (options.showError !== false) {
+    reject(new Error('登录状态已失效，请重新登录'))
+  }
+}
+
 /**
  * GET请求简化方法
  * @param {string} url - 请求URL
@@ -170,6 +254,22 @@ export const post = (url, data = {}, options = {}) => {
   return request({
     url,
     method: 'POST',
+    data,
+    ...options
+  })
+}
+
+/**
+ * PUT请求简化方法
+ * @param {string} url - 请求URL
+ * @param {Object} data - 请求数据
+ * @param {Object} options - 其他选项
+ * @returns {Promise}
+ */
+export const put = (url, data = {}, options = {}) => {
+  return request({
+    url,
+    method: 'PUT',
     data,
     ...options
   })
